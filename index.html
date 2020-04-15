@@ -9,134 +9,158 @@
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="app.css">
 
     <link rel="icon" href="favicon.svg" />
   </head>
 
   <body>
-    <div class="container-fluid" id="app">
-      <div class="row mt-4">
 
-        <!-- Modulation -->
-        <div class="col-12 col-lg-8">
-          <div class="card text-white bg-dark mb-3">
-            <div class="card-header">
-              Modulation
-            </div>
-            <div class="card-body pt-2">
-              <div class="row">
-                <div class="col-12 col-lg-4">
-                  <div class="card bg-secondary text-white">
-                    <div class="card-body">
-                      <h5 class="card-title">Wave</h5>
-                      <div v-for="wf in waveForms">
-                        <input v-model="values.siren.waveForm" :value="wf" type="radio" name="waveForm">
-                        <label>{{ wf }}</label>
+    <div id="app">
+      <div id="loading-wrapper" v-if="isLoading">
+        <div id="loading-text">LOADING</div>
+        <div id="loading-content"></div>
+      </div>
+
+      <div class="container">
+        <div class="row mt-4">
+
+          <!-- Modulation -->
+          <div class="col-12 col-lg-8">
+            <div class="card text-white bg-dark mb-3">
+              <div class="card-header">
+                Modulation
+              </div>
+              <div class="card-body pt-2">
+                <div class="row">
+                  <div class="col-12 col-lg-4">
+                    <div class="card bg-secondary text-white">
+                      <div class="card-body">
+                        <h5 class="card-title">Wave</h5>
+                        <div class="custom-control custom-radio">
+                          <input type="radio" id="sine" name="wave" v-model="values.siren.waveForm" value="sine" class="custom-control-input">
+                          <label class="custom-control-label" for="sine">Sine</label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                          <input type="radio" id="triangle" name="wave" v-model="values.siren.waveForm" value="triangle" class="custom-control-input">
+                          <label class="custom-control-label" for="triangle">Triangle</label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                          <input type="radio" id="square" name="wave" v-model="values.siren.waveForm" value="square" class="custom-control-input">
+                          <label class="custom-control-label" for="square">Square</label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                          <input type="radio" id="sawtooth" name="wave" v-model="values.siren.waveForm" value="sawtooth" class="custom-control-input">
+                          <label class="custom-control-label" for="sawtooth">Sawtooth</label>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- Tone -->
-                <div class="col-12 col-lg-4">
-                  <div class="card bg-secondary text-white">
-                    <div class="card-body">
-                      <h5 class="card-title">Tone <small>({{ values.siren.tone }})</small></h5>
-                      <p><input class="custom-range" v-model="values.siren.tone" max="1400" min="40" step="10" value="700" type="range"></p>
+                  <!-- Tone -->
+                  <div class="col-12 col-lg-4">
+                    <div class="card bg-secondary text-white">
+                      <div class="card-body">
+                        <h5 class="card-title">Tone <small>({{ values.siren.tone }})</small></h5>
+                        <p><input class="custom-range" v-model="values.siren.tone" max="1400" min="40" step="10" value="700" type="range"></p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- Speed -->
-                <div class="col-12 col-lg-4">
-                  <div class="card bg-secondary text-white">
-                    <div class="card-body">
-                      <h5 class="card-title">Speed <small>({{ values.siren.speed }})</small></h5>
-                      <p><input class="custom-range" v-model="values.siren.speed" max="12" min="0.1" step="0.1" value="8" type="range"></p>
+                  <!-- Speed -->
+                  <div class="col-12 col-lg-4">
+                    <div class="card bg-secondary text-white">
+                      <div class="card-body">
+                        <h5 class="card-title">Speed <small>({{ values.siren.speed }})</small></h5>
+                        <p><input class="custom-range" v-model="values.siren.speed" max="12" min="0.1" step="0.1" value="8" type="range"></p>
+                      </div>
                     </div>
                   </div>
+                  
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Presets -->
+          <div class="col-12 col-lg-4">
+            <div class="card text-white bg-dark mb-3">
+              <div class="card-header">
+                Presets
+              </div>
+              <div class="card-body">
+                <div v-for="p in presets">
+                  <input v-on:click="applyPreset(p)" type="radio" :value="p" name="preset" />
+                  <label>{{ p.name }}</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delay -->
+          <div class="col-12 col-lg-6">
+            <div class="card text-white bg-dark mb-3">
+              <div class="card-header">
+                Delay
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-12 mb-3 text-center">
+                    <div class="custom-control custom-switch">
+                      <input type="checkbox" v-model="values.isDelayEnabled" class="custom-control-input" id="customSwitch1">
+                      <label class="custom-control-label" for="customSwitch1">On/Off</label>
+                    </div>
+                  </div>
                 
-              </div>
-            </div>
-          </div>
-        </div>
+                  <div class="col-12 mb-3 text-center">
+                    <hr style="border: 1px dashed white;" />
+                  </div>
 
-        <!-- Presets -->
-        <div class="col-12 col-lg-4">
-          <div class="card text-white bg-secondary mb-3">
-            <div class="card-header">
-              Presets
-            </div>
-            <div class="card-body">
-              <div v-for="p in presets">
-                <input v-on:click="applyPreset(p)" type="radio" :value="p" name="preset" />
-                <label>{{ p.name }}</label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Delay -->
-        <div class="col-12 col-lg-6">
-          <div class="card text-white bg-info mb-3">
-            <div class="card-header">
-              Delay
-            </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-12 mb-3 text-center">
-                  <div class="custom-control custom-switch">
-                    <input type="checkbox" v-model="isDelayEnabled" class="custom-control-input" id="customSwitch1">
-                    <label class="custom-control-label" for="customSwitch1">On/Off</label>
+                  <div class="col-12 col-lg-4">
+                    <p>Time <small>({{ values.delay.time }})</small></p>
+                    <p><input class="custom-range" v-model="values.delay.time" max="1700" min="1" step="1" type="range"></p>
+                  </div>
+                  <div class="col-12 col-lg-4">
+                    <p>Feedback <small>({{ values.delay.feedback }})</small></p>
+                    <p><input class="custom-range" v-model="values.delay.feedback" max="1" min="0" step="0.1" type="range"></p>
+                  </div>
+                  <div class="col-12 col-lg-4">
+                    <p>Mix <small>({{ values.delay.mix }})</small></p>
+                    <p><input class="custom-range" v-model="values.delay.mix"  max="1" min="0" step="0.1" type="range"></p>
                   </div>
                 </div>
-               
-                <div class="col-12 mb-3 text-center">
-                  <hr style="border: 1px dashed white;" />
-                </div>
+              </div>
+            </div>
+          </div>
 
-                <div class="col-12 col-lg-4">
-                  <p>Time <small>({{ values.delay.time }})</small></p>
-                  <p><input class="custom-range" v-model="values.delay.time" max="1700" min="1" step="1" type="range"></p>
-                </div>
-                <div class="col-12 col-lg-4">
-                  <p>Feedback <small>({{ values.delay.feedback }})</small></p>
-                  <p><input class="custom-range" v-model="values.delay.feedback" max="1" min="0" step="0.1" type="range"></p>
-                </div>
-                <div class="col-12 col-lg-4">
-                  <p>Mix <small>({{ values.delay.mix }})</small></p>
-                  <p><input class="custom-range" v-model="values.delay.mix"  max="1" min="0" step="0.1" type="range"></p>
+          
+
+          <!-- Output -->
+          <div class="col-12 col-lg-4">
+            <div class="card bg-light mb-3">
+              <div class="card-header">
+                Output
+              </div>
+              <div class="card-body">
+                <div class="row">
+
+                  <div class="col-12 col-lg-9">
+                    <p>Volume <small>({{ values.volume }})</small></p>
+                    <p><input class="custom-range" v-on:update="updateVolume()" v-model="values.volume"  max="1" min="0" step="0.1" type="range"></p>
+                  </div>
+
+                  <div class="col-12 col-lg-3 text-center display-4">
+                    <i v-bind:class="{ 'fa fa-bullseye': true, 'text-danger': isPlaying }" aria-hidden="true"></i>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Output -->
-        <div class="col-12 col-lg-4">
-          <div class="card bg-light mb-3">
-            <div class="card-header">
-              Output
-            </div>
-            <div class="card-body">
-              <div class="row">
-
-                <div class="col-12 col-lg-9">
-                  <p>Volume <small>({{ values.volume }})</small></p>
-                  <p><input class="custom-range" v-on:update="updateVolume()" v-model="values.volume"  max="1" min="0" step="0.1" type="range"></p>
-                </div>
-
-                <div class="col-12 col-lg-3 text-center display-4">
-                  <i v-bind:class="{ 'fa fa-bullseye': true, 'text-danger': isPlaying }" aria-hidden="true"></i>
-                </div>
-              </div>
-            </div>
+          <div class="col-12 text-center">
+            <button class="btn btn-info btn-lg btn-block" v-on:keydown.space="play" v-on:keyup.space="stop" @mousedown="play" @mouseup="stop"><i class="fa fa-play" aria-hidden="true"></i> Trigger</button>
+            <small>Or press the <b>space</b> bar..</small>
           </div>
-        </div>
-
-        <div class="col-12 text-center">
-          <button class="btn btn-success btn-lg" v-on:keydown.space="play" v-on:keyup.space="stop" @mousedown="play" @mouseup="stop"><i class="fa fa-play" aria-hidden="true"></i> Play</button>
         </div>
       </div>
     </div>

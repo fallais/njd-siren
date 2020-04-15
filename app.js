@@ -72,14 +72,15 @@ var vm = new Vue({
         speed: 8,
       },   
       delay: {
-        time: 1200,
+        time: 600,
         feedback: 0.5,
         mix: 0.2
       },
-      volume: 0.3
+      volume: 0.3,
+      isDelayEnabled: false,
     },
-    isDelayEnabled: false,
-    isPlaying: false
+    isPlaying: false,
+    isLoading: false,
   },
   created: function(){
     window.addEventListener('keyup', this.keyUp);
@@ -105,6 +106,12 @@ var vm = new Vue({
       this.values.siren.tone = p.values.siren.tone;
       this.values.siren.speed = p.values.siren.speed;
     },
+    beforeCreate: function(){
+      this.isLoading = true;
+    },
+    mounted: function(){
+      this.isLoading = false;
+    },
     play: function () {
       // Return if already playing
       if (this.isPlaying){
@@ -120,7 +127,7 @@ var vm = new Vue({
       // Init the delay
       this.delay = new tuna.Delay({
         feedback: this.values.delay.feedback,
-        delayTime: this.values.delay.time / 1000,
+        delayTime: this.values.delay.time,
         wetLevel: this.values.delay.mix,
         dryLevel: 1,
         cutoff: 2000,
@@ -151,7 +158,7 @@ var vm = new Vue({
       this.mainOscillator.connect(this.outputGain)
 
       // Connect to the destination based on delay status
-      if(this.isDelayEnabled){
+      if(this.values.isDelayEnabled){
         // Connect the oscillator gain to delay
         this.outputGain.connect(this.delay);
 
