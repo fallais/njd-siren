@@ -89,7 +89,8 @@
                 Presets
               </div>
               <div class="card-body">
-                <button v-bind:class="{ 'btn btn-secondary ml-1 mr-1': true, 'btn-info': selectedPreset == p.name }" v-on:click="applyPreset(p)" v-for="p in presets">{{ p.name }}</button>
+                <button v-bind:class="{ 'btn btn-secondary ml-1 mr-1 mt-1 mb-1': true, 'btn-info': selectedPreset == p.name }" v-on:click="applyPreset(p)" v-for="p in presets">{{ p.name }}</button>
+                <button class="btn btn-secondary ml-1 mr-1 mt-1 mb-1" v-on:click="applyRandomPreset(p)">Random</button>
               </div>
             </div>
           </div>
@@ -153,13 +154,15 @@
               <div class="card-body">
                 <div class="row">
 
-                  <div class="col-12 col-lg-9">
+                  <div class="col-12">
                     <p>Volume <small>({{ values.volume }})</small></p>
                     <p><input class="custom-range" v-on:update="updateVolume()" v-model="values.volume"  max="1" min="0" step="0.1" type="range"></p>
                   </div>
 
-                  <div class="col-12 col-lg-3 text-center display-4">
-                    <i v-bind:class="{ 'fa fa-bullseye': true, 'text-danger': isPlaying }" aria-hidden="true"></i>
+                  <div class="col-12">
+                    <div class="progress" style="height: 30px;">
+                      <div v-bind:class="{ 'progress-bar bg-success': true, 'bg-danger': isClipping }" role="progressbar" :style="{ width: meterValue + '%' }" :aria-valuenow="meterValue" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -178,6 +181,7 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tunajs/1.0.1/tuna-min.js" type="text/javascript"></script>
+    <script src="volume-meter.js" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js" type="text/javascript"></script>
     <script src="app.js" type="text/javascript"></script>
   </body>

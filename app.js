@@ -4,6 +4,9 @@ var audioContext = new AudioContext()
 // Init the Tuna library
 var tuna = new Tuna(audioContext);
 
+// Define the wave forms
+const waveForms = ['sine', 'square', 'sawtooth', 'triangle'];
+
 // Set the presets
 const presets = [
   {
@@ -51,19 +54,51 @@ const presets = [
       }
     }
   },
+  {
+    name: "P4",
+    values: {
+      siren: {
+        waveForm: 'square',
+        tone: 350,
+        speed: 3,
+      },   
+      delay: {
+        time: 600,
+        feedback: 0.30,
+        mix: 0.4
+      }
+    }
+  },
+  {
+    name: "P5",
+    values: {
+      siren: {
+        waveForm: 'triangle',
+        tone: 800,
+        speed: 9,
+      },   
+      delay: {
+        time: 950,
+        feedback: 0.5,
+        mix: 0.4
+      }
+    }
+  }
+  
 ]
 
 var vm = new Vue({
   el: '#app',
   data: {
-    message: 'La sirène du forum Dubsounds !',
-    waveForms: ['sine', 'square', 'sawtooth', 'triangle'],
     ctx: audioContext,
     mainOscillator: null,
     lfoOscillator: null,
     outputGain: null,
     lfoGain: null,
     delay: null,
+    meter: null,
+    meterValue: 0,
+    isClipping: false,
     presets: presets,
     selectedPreset: '',
     values: {
@@ -78,7 +113,7 @@ var vm = new Vue({
         mix: 0.2
       },
       volume: 0.3,
-      isDelayEnabled: false,
+      isDelayEnabled: true,
     },
     isPlaying: false,
     isLoading: false,
@@ -87,9 +122,26 @@ var vm = new Vue({
     window.addEventListener('keyup', this.keyUp);
     window.addEventListener('keydown', this.keyDown);
   },
-  beforeDestroy() {
+  beforeDestroy: function() {
     window.removeEventListener('keyup', this.keyUp);
     window.removeEventListener('keydown', this.keyDown);
+  },
+  beforeCreate: function(){
+    this.isLoading = true;
+  },
+  mounted: function(){
+    this.isLoading = false;
+
+    // Init the output gain and the LFO gain
+    this.outputGain = this.ctx.createGain()
+    this.lfoGain = this.ctx.createGain()
+
+    // Create a new volume meter and connect it.
+    this.meter = createAudioMeter(this.ctx);
+    this.outputGain.connect(this.meter);
+
+    // Refresh
+    this.interval = setInterval(() => this.updateMeter(), 100);
   },
   methods: {
     keyUp: function(e){
@@ -102,18 +154,31 @@ var vm = new Vue({
         this.play();
       }
     },
+    updateMeter: function(){
+      this.meterValue = Math.floor(this.meter.volume * 100);
+      this.isClipping = this.meter.checkClipping();
+    },
     applyPreset: function (p) {
+      // Enable delay
+      this.values.isDelayEnabled = true;
+
+      // Set values
       this.values.siren.waveForm = p.values.siren.waveForm;
       this.values.siren.tone = p.values.siren.tone;
       this.values.siren.speed = p.values.siren.speed;
 
       this.selectedPreset = p.name;
     },
-    beforeCreate: function(){
-      this.isLoading = true;
-    },
-    mounted: function(){
-      this.isLoading = false;
+    applyRandomPreset: function () {
+      // Enable delay
+      this.values.isDelayEnabled = true;
+
+      // Set values
+      this.values.siren.waveForm =  waveForms[Math.floor(Math.random() * (waveForms.length -1))];
+      this.values.siren.tone = Math.floor(Math.random() * (1400 - 40) + 40);
+      this.values.siren.speed = Math.floor(Math.random() * (12 - 0.1) + 0.1);
+
+      this.selectedPreset = '';
     },
     play: function () {
       // Return if already playing
@@ -122,10 +187,6 @@ var vm = new Vue({
       }
 
       this.isPlaying = true;
-
-      // Init the output gain and the LFO gain
-      this.outputGain = this.ctx.createGain()
-      this.lfoGain = this.ctx.createGain()
 
       // Init the delay
       this.delay = new tuna.Delay({
@@ -160,26 +221,30 @@ var vm = new Vue({
       // Connect the main oscillator to output gain
       this.mainOscillator.connect(this.outputGain)
 
-      // Connect to the destination based on delay status
+      // Connect the delay if enabled
       if(this.values.isDelayEnabled){
         // Connect the oscillator gain to delay
-        this.outputGain.connect(this.delay);
+        this.mainOscillator.connect(this.delay);
 
         // Connect the delay to the context destination
-        this.delay.connect(this.ctx.destination);
-      } else {
-        // Connect the oscillator to the context destination
-        this.outputGain.connect(this.ctx.destination);
+        this.delay.connect(this.outputGain);
       }
+
+      // Connect the output gain to the context destination
+      this.outputGain.connect(this.ctx.destination);
       
       // Start oscillators
       this.mainOscillator.start();
       this.lfoOscillator.start();
     },
     stop: function () {
-      // Disconnect all gains
-      this.outputGain.disconnect();
-      this.lfoGain.disconnect();
+      // Return if already stopped
+      if (!this.isPlaying){
+        return
+      }
+
+      // Disconnect the gain of the LFO from the main oscillator frequency
+      this.lfoGain.disconnect(this.mainOscillator.frequency);
 
       // Disconnect all oscillators
       this.mainOscillator.disconnect();

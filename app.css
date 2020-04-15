@@ -1,3 +1,8 @@
+body
+{
+  background-color: rgba(197, 177, 177, 0.801);
+}
+
 #loading-wrapper {
   display: block;
   position: absolute;
