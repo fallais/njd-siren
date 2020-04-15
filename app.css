@@ -58,3 +58,8 @@
     transform: rotate(360deg);
   }
 }
+
+.bg-secondary-custom
+{
+  background-color: rgb(78, 78, 78);
+}

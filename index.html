@@ -34,7 +34,7 @@
               <div class="card-body pt-2">
                 <div class="row">
                   <div class="col-12 col-lg-4">
-                    <div class="card bg-secondary text-white">
+                    <div class="card bg-secondary-custom text-white">
                       <div class="card-body">
                         <h5 class="card-title">Wave</h5>
                         <div class="custom-control custom-radio">
@@ -59,7 +59,7 @@
 
                   <!-- Tone -->
                   <div class="col-12 col-lg-4">
-                    <div class="card bg-secondary text-white">
+                    <div class="card bg-secondary-custom text-white">
                       <div class="card-body">
                         <h5 class="card-title">Tone <small>({{ values.siren.tone }})</small></h5>
                         <p><input class="custom-range" v-model="values.siren.tone" max="1400" min="40" step="10" value="700" type="range"></p>
@@ -69,7 +69,7 @@
 
                   <!-- Speed -->
                   <div class="col-12 col-lg-4">
-                    <div class="card bg-secondary text-white">
+                    <div class="card bg-secondary-custom text-white">
                       <div class="card-body">
                         <h5 class="card-title">Speed <small>({{ values.siren.speed }})</small></h5>
                         <p><input class="custom-range" v-model="values.siren.speed" max="12" min="0.1" step="0.1" value="8" type="range"></p>
@@ -89,10 +89,7 @@
                 Presets
               </div>
               <div class="card-body">
-                <div v-for="p in presets">
-                  <input v-on:click="applyPreset(p)" type="radio" :value="p" name="preset" />
-                  <label>{{ p.name }}</label>
-                </div>
+                <button v-bind:class="{ 'btn btn-secondary ml-1 mr-1': true, 'btn-info': selectedPreset == p.name }" v-on:click="applyPreset(p)" v-for="p in presets">{{ p.name }}</button>
               </div>
             </div>
           </div>
@@ -106,27 +103,39 @@
               <div class="card-body">
                 <div class="row">
                   <div class="col-12 mb-3 text-center">
-                    <div class="custom-control custom-switch">
-                      <input type="checkbox" v-model="values.isDelayEnabled" class="custom-control-input" id="customSwitch1">
-                      <label class="custom-control-label" for="customSwitch1">On/Off</label>
+                    <div class="card text-white bg-secondary-custom mb-3">
+                      <div class="card-body">
+                        <div class="custom-control custom-switch">
+                          <input type="checkbox" v-model="values.isDelayEnabled" class="custom-control-input" id="customSwitch1">
+                          <label class="custom-control-label" for="customSwitch1">On/Off</label>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                
-                  <div class="col-12 mb-3 text-center">
-                    <hr style="border: 1px dashed white;" />
                   </div>
 
                   <div class="col-12 col-lg-4">
-                    <p>Time <small>({{ values.delay.time }})</small></p>
-                    <p><input class="custom-range" v-model="values.delay.time" max="1700" min="1" step="1" type="range"></p>
+                    <div class="card text-white bg-secondary-custom mb-3">
+                      <div class="card-body">
+                        <p>Time <small>({{ values.delay.time }})</small></p>
+                        <p><input class="custom-range" v-model="values.delay.time" max="1700" min="1" step="1" type="range"></p>
+                      </div>
+                    </div>
                   </div>
                   <div class="col-12 col-lg-4">
-                    <p>Feedback <small>({{ values.delay.feedback }})</small></p>
-                    <p><input class="custom-range" v-model="values.delay.feedback" max="1" min="0" step="0.1" type="range"></p>
+                    <div class="card text-white bg-secondary-custom mb-3">
+                      <div class="card-body">
+                        <p>Feedback <small>({{ values.delay.feedback }})</small></p>
+                        <p><input class="custom-range" v-model="values.delay.feedback" max="1" min="0" step="0.1" type="range"></p>
+                      </div>
+                    </div>
                   </div>
                   <div class="col-12 col-lg-4">
-                    <p>Mix <small>({{ values.delay.mix }})</small></p>
-                    <p><input class="custom-range" v-model="values.delay.mix"  max="1" min="0" step="0.1" type="range"></p>
+                    <div class="card text-white bg-secondary-custom mb-3">
+                      <div class="card-body">
+                        <p>Mix <small>({{ values.delay.mix }})</small></p>
+                        <p><input class="custom-range" v-model="values.delay.mix"  max="1" min="0" step="0.1" type="range"></p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -137,7 +146,7 @@
 
           <!-- Output -->
           <div class="col-12 col-lg-4">
-            <div class="card bg-light mb-3">
+            <div class="card text-white bg-dark mb-3">
               <div class="card-header">
                 Output
               </div>

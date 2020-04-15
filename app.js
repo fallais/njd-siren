@@ -65,6 +65,7 @@ var vm = new Vue({
     lfoGain: null,
     delay: null,
     presets: presets,
+    selectedPreset: '',
     values: {
       siren: {
         waveForm: 'sine',
@@ -105,6 +106,8 @@ var vm = new Vue({
       this.values.siren.waveForm = p.values.siren.waveForm;
       this.values.siren.tone = p.values.siren.tone;
       this.values.siren.speed = p.values.siren.speed;
+
+      this.selectedPreset = p.name;
     },
     beforeCreate: function(){
       this.isLoading = true;
