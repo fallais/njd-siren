@@ -6,7 +6,7 @@
 
 The principle is a a **main oscillator** that produces a wave. Beside, another oscillator that we call the **low frequency oscillator** (LFO) produces another wave. The oscillations of the LFO are modifying the wave of the main oscillator, this is called **modulation**. The result is a siren that sounds like the cops, of the ambulance.
 
-![LOF Explained](https://github.com/fallais/njd-siren/blob/master/assets/lfo_explained.jpg)
+![LOF Explained](https://github.com/fallais/njd-siren/blob/master/assets/lfo_explained.gif)
 
 ## Usage
 
