@@ -34,7 +34,7 @@
               <div class="card-body pt-2">
                 <div class="row">
                   <div class="col-12 col-lg-4">
-                    <div class="card bg-secondary-custom text-white">
+                    <div class="card bg-secondary-custom text-white h-100">
                       <div class="card-body">
                         <h5 class="card-title">Wave</h5>
                         <div class="custom-control custom-radio">
@@ -59,7 +59,7 @@
 
                   <!-- Tone -->
                   <div class="col-12 col-lg-4">
-                    <div class="card bg-secondary-custom text-white">
+                    <div class="card bg-secondary-custom text-white h-100">
                       <div class="card-body">
                         <h5 class="card-title">Tone <small>({{ values.siren.tone }})</small></h5>
                         <p><input class="custom-range" v-model="values.siren.tone" max="1400" min="40" step="10" value="700" type="range"></p>
@@ -69,7 +69,7 @@
 
                   <!-- Speed -->
                   <div class="col-12 col-lg-4">
-                    <div class="card bg-secondary-custom text-white">
+                    <div class="card bg-secondary-custom text-white h-100">
                       <div class="card-body">
                         <h5 class="card-title">Speed <small>({{ values.siren.speed }})</small></h5>
                         <p><input class="custom-range" v-model="values.siren.speed" max="12" min="0.1" step="0.1" value="8" type="range"></p>
@@ -89,8 +89,10 @@
                 Presets
               </div>
               <div class="card-body">
-                <button v-bind:class="{ 'btn btn-secondary ml-1 mr-1 mt-1 mb-1': true, 'btn-info': selectedPreset == p.name }" v-on:click="applyPreset(p)" v-for="p in presets">{{ p.name }}</button>
-                <button class="btn btn-secondary ml-1 mr-1 mt-1 mb-1" v-on:click="applyRandomPreset(p)">Random</button>
+                <p>
+                  <button v-bind:class="{ 'btn btn-secondary ml-1 mr-1 mt-1 mb-1': true, 'btn-info': selectedPreset == p.name }" v-on:click="applyPreset(p)" v-for="p in presets">{{ p.name }}</button>
+                </p>
+                <p><button class="btn btn-light btn-block ml-1 mr-1 mt-1 mb-1" v-on:click="applyRandomPreset(p)">Random</button></p>
               </div>
             </div>
           </div>
@@ -181,7 +183,7 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tunajs/1.0.1/tuna-min.js" type="text/javascript"></script>
-    <script src="volume-meter.js" type="text/javascript"></script>
+    <script src="vendor/volume-meter.js" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js" type="text/javascript"></script>
     <script src="app.js" type="text/javascript"></script>
   </body>

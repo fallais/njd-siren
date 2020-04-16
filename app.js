@@ -84,7 +84,6 @@ const presets = [
       }
     }
   }
-  
 ]
 
 var vm = new Vue({
@@ -110,7 +109,7 @@ var vm = new Vue({
       delay: {
         time: 600,
         feedback: 0.5,
-        mix: 0.2
+        mix: 0.4
       },
       volume: 0.3,
       isDelayEnabled: true,
