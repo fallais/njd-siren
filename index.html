@@ -3,181 +3,314 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Dub siren for reggae and sound-system culture, built with the Web Audio API." />
+    <meta name="description" content="Dub siren control tower for reggae and sound-system culture, built with the Web Audio API." />
 
-    <title>Siren</title>
+    <title>NJD Siren · Control Tower</title>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.9/dist/css/bootstrap.min.css" integrity="sha384-yEPZ7jP9S0QKiUQ0m3jjsO4ProIW7wvR9gXkI7JOGa2XVsw53Yke2bsdkBbjmmiX" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="app.css">
 
     <link rel="icon" href="favicon.svg" />
   </head>
 
   <body>
+    <!-- Shared gradients for the chicken-head knobs -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <linearGradient id="ch-body" x1="0" x2="1" y1="0" y2="0.3">
+          <stop offset="0" stop-color="#3b3936" />
+          <stop offset="0.42" stop-color="#171615" />
+          <stop offset="1" stop-color="#050505" />
+        </linearGradient>
+        <radialGradient id="ch-base" cx="0.4" cy="0.35" r="0.7">
+          <stop offset="0" stop-color="#2c2b29" />
+          <stop offset="1" stop-color="#080808" />
+        </radialGradient>
+        <radialGradient id="vu-face" cx="0.5" cy="0.9" r="0.95">
+          <stop offset="0" stop-color="#fff7de" />
+          <stop offset="0.55" stop-color="#f4dda5" />
+          <stop offset="1" stop-color="#d5ae62" />
+        </radialGradient>
+      </defs>
+    </svg>
 
     <div id="app" v-cloak>
-      <div class="container">
-        <div class="row mt-4">
+      <main class="tower" ref="tower">
 
-          <!-- Modulation -->
-          <div class="col-12 col-lg-8">
-            <div class="card text-bg-dark mb-3">
-              <div class="card-header">
-                Modulation
-              </div>
-              <div class="card-body pt-2">
-                <div class="row g-2">
-                  <div class="col-12 col-md-6">
-                    <div class="card bg-secondary-custom text-white h-100">
-                      <div class="card-body">
-                        <h5 class="card-title">Wave</h5>
-                        <div class="form-check" v-for="w in ['sine', 'triangle', 'square', 'sawtooth']" :key="w">
-                          <input type="radio" :id="'wave-' + w" name="wave" v-model="values.siren.waveForm" :value="w" class="form-check-input">
-                          <label class="form-check-label text-capitalize" :for="'wave-' + w">{{ w }}</label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+        <!-- Direct-drive turntable on top of the tower, front elevation (y = 160 - height in mm) -->
+        <section class="deck" aria-label="Turntable">
+          <svg class="deck-svg" viewBox="0 57 453 92" aria-hidden="true">
+            <defs>
+              <linearGradient id="deck-silver" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="#eeeff0" />
+                <stop offset="1" stop-color="#a4a6a8" />
+              </linearGradient>
+              <linearGradient id="deck-rubber" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="#2e2e2e" />
+                <stop offset="0.15" stop-color="#1c1c1c" />
+                <stop offset="1" stop-color="#0b0b0b" />
+              </linearGradient>
+              <linearGradient id="deck-cyl" x1="0" x2="1">
+                <stop offset="0" stop-color="#3a3b3d" />
+                <stop offset="0.3" stop-color="#8d8f91" />
+                <stop offset="0.5" stop-color="#a7a9ab" />
+                <stop offset="0.72" stop-color="#7e8082" />
+                <stop offset="1" stop-color="#323335" />
+              </linearGradient>
+              <linearGradient id="deck-cyl-shade" x1="0" x2="1">
+                <stop offset="0" stop-color="#000" stop-opacity="0.8" />
+                <stop offset="0.18" stop-color="#000" stop-opacity="0" />
+                <stop offset="0.82" stop-color="#000" stop-opacity="0" />
+                <stop offset="1" stop-color="#000" stop-opacity="0.8" />
+              </linearGradient>
+              <linearGradient id="deck-post" x1="0" x2="1">
+                <stop offset="0" stop-color="#7c7e80" />
+                <stop offset="0.4" stop-color="#f2f3f4" />
+                <stop offset="1" stop-color="#6d6f71" />
+              </linearGradient>
+              <linearGradient id="deck-weight" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="#9c9ea0" />
+                <stop offset="0.35" stop-color="#f0f1f2" />
+                <stop offset="1" stop-color="#77797b" />
+              </linearGradient>
+              <radialGradient id="deck-glow" cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0" stop-color="#ff9a4a" stop-opacity="0.75" />
+                <stop offset="1" stop-color="#ff7a2e" stop-opacity="0" />
+              </radialGradient>
+              <pattern id="deck-knurl" width="2.4" height="6" patternUnits="userSpaceOnUse">
+                <rect width="2.4" height="6" fill="#2a2a2a" />
+                <rect width="1.1" height="6" fill="#5a5a5a" />
+              </pattern>
+            </defs>
 
-                  <div class="col-12 col-md-6">
-                    <div class="card bg-secondary-custom text-white h-100">
-                      <div class="card-body">
-                        <h5 class="card-title">Carrier</h5>
-                        <div class="form-check" v-for="w in ['sine', 'triangle', 'square', 'sawtooth']" :key="w">
-                          <input type="radio" :id="'carrier-' + w" name="carrier" v-model="values.siren.carrier" :value="w" class="form-check-input">
-                          <label class="form-check-label text-capitalize" :for="'carrier-' + w">{{ w }}</label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            <!-- Feet, base, top plate edge -->
+            <rect x="24" y="127" width="68" height="22" rx="4" fill="#0d0d0d" />
+            <rect x="361" y="127" width="68" height="22" rx="4" fill="#0d0d0d" />
+            <rect x="24" y="129" width="68" height="4" fill="url(#deck-post)" />
+            <rect x="361" y="129" width="68" height="4" fill="url(#deck-post)" />
+            <rect x="0" y="99" width="453" height="31" rx="5" fill="url(#deck-rubber)" />
+            <rect x="0" y="89" width="453" height="11" rx="2" fill="url(#deck-silver)" />
+            <line x1="1" x2="452" y1="89.4" y2="89.4" stroke="#fff" stroke-opacity="0.8" stroke-width="0.6" />
 
-                  <div class="col-12 col-md-4">
-                    <div class="card bg-secondary-custom text-white h-100">
-                      <div class="card-body">
-                        <label class="h5 card-title" for="tone">Tone <small>({{ values.siren.tone }})</small></label>
-                        <input id="tone" class="form-range" v-model.number="values.siren.tone" max="1400" min="40" step="10" type="range">
-                      </div>
-                    </div>
-                  </div>
 
-                  <div class="col-12 col-md-4">
-                    <div class="card bg-secondary-custom text-white h-100">
-                      <div class="card-body">
-                        <label class="h5 card-title" for="speed">Speed <small>({{ values.siren.speed }})</small></label>
-                        <input id="speed" class="form-range" v-model.number="values.siren.speed" max="12" min="0.1" step="0.1" type="range">
-                      </div>
-                    </div>
-                  </div>
+            <!-- Platter side: a cone flaring out towards the bottom, carrying the strobe dots -->
+            <polygon points="31,64 343,64 353,89 21,89" fill="url(#deck-cyl)" />
+            <path class="strobe-row" />
+            <path class="strobe-row" />
+            <path class="strobe-row" />
+            <path class="strobe-row" />
+            <polygon points="31,64 343,64 353,89 21,89" fill="url(#deck-cyl-shade)" />
+            <line x1="31" x2="343" y1="64.3" y2="64.3" stroke="#fff" stroke-opacity="0.5" stroke-width="0.6" />
+            <ellipse cx="46" cy="76" rx="42" ry="16" fill="url(#deck-glow)" class="deck-glow" />
 
-                  <div class="col-12 col-md-4">
-                    <div class="card bg-secondary-custom text-white h-100">
-                      <div class="card-body">
-                        <label class="h5 card-title" for="depth">Depth <small>({{ values.siren.depth }})</small></label>
-                        <input id="depth" class="form-range" v-model.number="values.siren.depth" max="600" min="0" step="10" type="range">
-                      </div>
-                    </div>
-                  </div>
+            <!-- Mat, record, spindle -->
+            <rect x="37" y="61" width="300" height="3" fill="#262626" />
+            <rect x="35" y="58.5" width="304" height="2.6" rx="1.2" fill="#0a0a0a" />
+            <line x1="40" x2="334" y1="58.8" y2="58.8" stroke="#fff" stroke-opacity="0.18" stroke-width="0.4" />
+            <rect x="185.5" y="48" width="3" height="11" rx="1.2" fill="url(#deck-post)" />
 
+            <!-- Strobe lamp, buttons -->
+            <rect x="41" y="76" width="9" height="13" fill="url(#deck-post)" />
+            <ellipse cx="45.5" cy="76" rx="4.5" ry="1.6" class="deck-lamp" />
+            <rect x="8" y="85.5" width="54" height="4" rx="1" fill="url(#deck-post)" />
+            <rect x="68" :y="deck.speed === 33 ? 87.6 : 86.6" width="22" height="3" rx="0.8" fill="url(#deck-post)" />
+            <rect x="94" :y="deck.speed === 45 ? 87.6 : 86.6" width="22" height="3" rx="0.8" fill="url(#deck-post)" />
+
+            <!-- Tonearm: weight behind, then base, pillar, gimbal, rest, arm -->
+            <rect ref="armWeight" y="27" width="30" height="26" rx="4" fill="url(#deck-weight)" />
+            <rect x="360" y="80" width="70" height="9" fill="url(#deck-post)" />
+            <rect x="363" y="73" width="64" height="7" fill="url(#deck-knurl)" />
+            <rect x="387" y="50" width="16" height="23" fill="url(#deck-post)" />
+            <rect x="383" y="34" width="24" height="16" rx="3" fill="#1c1c1c" />
+            <circle cx="395" cy="41" r="4" fill="url(#deck-post)" />
+            <rect x="371" y="57" width="9" height="32" fill="#1e1e1e" />
+            <path d="M368 57 h15 v-3 h-3 v1.5 h-9 v-1.5 h-3 Z" fill="#2c2c2c" />
+            <line ref="armTube" x1="395" y1="41" class="arm-tube" />
+            <line ref="armShine" x1="395" y1="40" class="arm-tube-shine" />
+            <g ref="armHead">
+              <path d="M-14 1 L-25 -3" class="arm-lift" />
+              <rect x="-14" y="0" width="24" height="6" rx="1" fill="#141414" />
+              <rect x="-7" y="6" width="12" height="7" rx="0.8" fill="#3a3a3a" />
+              <rect x="-1.4" y="13" width="1" height="1.6" fill="#999" />
+            </g>
+          </svg>
+
+          <button type="button" class="deck-hit" style="--x: 6; --y: 82; --w: 58; --h: 16" :aria-pressed="deck.playing"
+            aria-label="Turntable start / stop" @click="deck.playing = !deck.playing"></button>
+          <button v-for="(rpm, i) in [33, 45]" :key="rpm" type="button" class="deck-hit" :style="{ '--x': 66 + i * 26, '--y': 82, '--w': 26, '--h': 16 }"
+            :aria-pressed="deck.speed === rpm" :aria-label="rpm + ' RPM'" @click="deck.speed = rpm"></button>
+        </section>
+
+        <div class="cabinet">
+          <div class="rack">
+
+            <!-- 1U: blank cover with backlit logo -->
+            <rack-unit :u="1" finish="black" :seed="1" class="cover">
+              <div class="vents" aria-hidden="true"><i v-for="n in 8" :key="n"></i></div>
+              <div class="sign" role="img" aria-label="Backyard Corner sound system">
+                <div v-for="layer in ['unlit', 'lit']" :key="layer" :class="['sign-layer', layer]">
+                  <span class="sign-emblem"></span>
+                  <span class="sign-words">
+                    <span class="sign-wordmark"></span>
+                    <span class="sign-tagline"></span>
+                  </span>
                 </div>
               </div>
-            </div>
-          </div>
+              <div class="vents" aria-hidden="true"><i v-for="n in 8" :key="n"></i></div>
+            </rack-unit>
 
-          <!-- Presets -->
-          <div class="col-12 col-lg-4">
-            <div class="card text-bg-dark mb-3">
-              <div class="card-header">
-                Presets
-              </div>
-              <div class="card-body">
-                <p>
-                  <button type="button" v-for="p in presets" :key="p.name" :class="['btn m-1', selectedPreset === p.name ? 'btn-info' : 'btn-secondary']" @click="applyPreset(p)">{{ p.name }}</button>
-                </p>
-                <p><button type="button" class="btn btn-light w-100" @click="applyRandomPreset">Random</button></p>
-                <small class="text-white-50">Keys <b>1</b> to <b>5</b> select a preset.</small>
-              </div>
-            </div>
-          </div>
+            <!-- 3U: siren -->
+            <rack-unit :u="3" finish="green" :seed="2" class="siren">
+              <div class="siren-left">
+                <header class="unit-title">
+                  <b>NJD</b>
+                  <span>Dub Siren</span>
+                </header>
 
-          <!-- Delay -->
-          <div class="col-12 col-lg-6">
-            <div class="card text-bg-dark mb-3">
-              <div class="card-header">
-                Delay
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-12 mb-3">
-                    <div class="card text-white bg-secondary-custom">
-                      <div class="card-body d-flex justify-content-center">
-                        <div class="form-check form-switch">
-                          <input type="checkbox" role="switch" v-model="values.isDelayEnabled" class="form-check-input" id="delay-enabled">
-                          <label class="form-check-label" for="delay-enabled">On/Off</label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div class="vu">
+                  <svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                    <rect width="200" height="120" fill="url(#vu-face)" />
+                    <path :d="vuRedArc" class="vu-red" />
+                    <line v-for="m in vuMarks" :key="m.db" :x1="m.x1" :y1="m.y1" :x2="m.x2" :y2="m.y2" :class="['vu-tick', { hot: m.hot }]" />
+                    <text v-for="m in vuMarks" :key="'t' + m.db" :x="m.tx" :y="m.ty" :class="['vu-num', { hot: m.hot }]">{{ m.label }}</text>
+                    <text x="100" y="86" class="vu-label">VU</text>
+                    <g ref="needle" transform="rotate(-45 100 135)">
+                      <line x1="100" y1="135" x2="100" y2="24" class="vu-needle" />
+                    </g>
+                    <path d="M58 120 Q100 92 142 120 Z" class="vu-hub" />
+                  </svg>
+                  <div class="vu-glass"></div>
+                </div>
 
-                  <div class="col-12 col-lg-4">
-                    <div class="card text-white bg-secondary-custom mb-3">
-                      <div class="card-body">
-                        <label class="form-label" for="delay-time">Time <small>({{ values.delay.time }})</small></label>
-                        <input id="delay-time" class="form-range" v-model.number="values.delay.time" max="1700" min="1" step="1" type="range">
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-12 col-lg-4">
-                    <div class="card text-white bg-secondary-custom mb-3">
-                      <div class="card-body">
-                        <label class="form-label" for="delay-feedback">Feedback <small>({{ values.delay.feedback }})</small></label>
-                        <input id="delay-feedback" class="form-range" v-model.number="values.delay.feedback" max="1" min="0" step="0.05" type="range">
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-12 col-lg-4">
-                    <div class="card text-white bg-secondary-custom mb-3">
-                      <div class="card-body">
-                        <label class="form-label" for="delay-mix">Mix <small>({{ values.delay.mix }})</small></label>
-                        <input id="delay-mix" class="form-range" v-model.number="values.delay.mix" max="1" min="0" step="0.05" type="range">
-                      </div>
-                    </div>
-                  </div>
+                <div class="lamp-row">
+                  <span :class="['lamp', 'red', { on: isClipping }]"></span>
+                  <span class="legend small">Peak</span>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Output -->
-          <div class="col-12 col-lg-6">
-            <div class="card text-bg-dark mb-3">
-              <div class="card-header">
-                Output
-              </div>
-              <div class="card-body">
-                <label class="form-label" for="volume">Volume <small>({{ values.volume }})</small></label>
-                <input id="volume" class="form-range mb-3" v-model.number="values.volume" max="1" min="0" step="0.05" type="range">
-
-                <div class="progress" style="height: 30px;" role="meter" aria-label="Output level" :aria-valuenow="meterValue" aria-valuemin="0" aria-valuemax="100">
-                  <div :class="['progress-bar', isClipping ? 'bg-danger' : 'bg-success']" :style="{ width: meterValue + '%' }"></div>
+              <div class="siren-controls">
+                <div class="ctl-row">
+                  <knob v-model="values.siren.tone" label="Tone" :min="40" :max="1400" :step="10" taper="log" unit=" Hz" :reset="defaults.siren.tone"></knob>
+                  <knob v-model="values.siren.speed" label="Speed" :min="0.1" :max="12" :step="0.1" taper="log" unit=" Hz" :decimals="1" :reset="defaults.siren.speed"></knob>
+                  <knob v-model="values.siren.depth" label="Depth" :min="0" :max="600" :step="10" :reset="defaults.siren.depth"></knob>
+                  <selector v-model="values.siren.waveForm" label="LFO Wave" :options="waves"></selector>
+                  <selector v-model="values.siren.carrier" label="Carrier" :options="carriers"></selector>
+                </div>
+                <div class="ctl-row">
+                  <knob v-model="values.siren.sweep" label="Sweep" :min="-24" :max="24" :step="1" bipolar unit=" st" :reset="defaults.siren.sweep"></knob>
+                  <knob v-model="values.siren.glide" label="Glide" :min="0.02" :max="2" :step="0.01" taper="log" unit=" s" :decimals="2" :reset="defaults.siren.glide"></knob>
+                  <knob v-model="values.siren.release" label="Release" :min="0.01" :max="3" :step="0.01" taper="log" unit=" s" :decimals="2" :reset="defaults.siren.release"></knob>
+                  <knob v-model="values.volume" label="Volume" :min="0" :max="1" :step="0.01" :scale="100" unit=" %" :reset="defaults.volume"></knob>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div class="col-12 text-center trigger-bar sticky-bottom py-2 mb-2">
-            <button type="button" :class="['btn btn-info btn-lg w-100 trigger', { active: isPlaying }]"
-              @pointerdown.prevent="onPointerDown" @pointerup="stop" @pointerleave="stop" @pointercancel="stop" @contextmenu.prevent>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 2v12l11-6z"/></svg>
-              Trigger
-            </button>
-            <small>Or press the <b>space</b> bar.</small>
+              <div class="siren-right">
+                <button type="button" :class="['trigger', { 'is-pressed': isPlaying }]" aria-label="Trigger siren"
+                  @pointerdown.prevent="onPointerDown" @pointerup="stop" @pointerleave="stop" @pointercancel="stop" @contextmenu.prevent>
+                  <span class="trigger-cap"></span>
+                </button>
+                <div class="legend">Siren</div>
+              </div>
+            </rack-unit>
+
+            <!-- 1U: drive and filter -->
+            <rack-unit :u="1" finish="grey" :seed="5" class="filter slim">
+              <header class="unit-title">
+                <b>Filter</b>
+                <span>Drive · Low-pass</span>
+              </header>
+              <div class="slim-controls">
+                <knob v-model="values.filter.drive" label="Drive" :min="0" :max="1" :step="0.01" :scale="100" unit=" %" :reset="defaults.filter.drive"></knob>
+                <knob v-model="values.filter.cutoff" label="Cutoff" :min="100" :max="12000" :step="10" taper="log" unit=" Hz" :reset="defaults.filter.cutoff"></knob>
+                <knob v-model="values.filter.resonance" label="Reso" :min="0" :max="20" :step="0.5" unit=" dB" :decimals="1" :reset="defaults.filter.resonance"></knob>
+                <knob v-model="values.filter.mod" label="LFO → Cut" :min="0" :max="4" :step="0.1" unit=" oct" :decimals="1" :reset="defaults.filter.mod"></knob>
+              </div>
+            </rack-unit>
+
+            <!-- 2U: delay -->
+            <rack-unit :u="2" finish="alu" :seed="3" class="echo">
+              <header class="unit-title">
+                <b>Echo</b>
+                <span>Space Delay</span>
+              </header>
+
+              <div class="echo-switch">
+                <bat-toggle v-model="values.isDelayEnabled" label="Echo on/off"></bat-toggle>
+                <bat-toggle v-model="values.delay.pingPong" label="Ping-pong" on-label="Ping" off-label="Mono"></bat-toggle>
+              </div>
+
+              <div class="echo-controls">
+                <knob v-model="values.delay.time" label="Time" :min="1" :max="1700" :step="1" unit=" ms" :reset="defaults.delay.time"></knob>
+                <knob v-model="values.delay.feedback" label="Repeat" :min="0" :max="1" :step="0.01" :scale="100" unit=" %" :reset="defaults.delay.feedback"></knob>
+                <knob v-model="values.delay.tone" label="Tone" :min="300" :max="8000" :step="10" taper="log" unit=" Hz" :reset="defaults.delay.tone"></knob>
+                <knob v-model="values.delay.wow" label="Wow" :min="0" :max="1" :step="0.01" :scale="100" unit=" %" :reset="defaults.delay.wow"></knob>
+                <knob v-model="values.delay.mix" label="Mix" :min="0" :max="1" :step="0.01" :scale="100" unit=" %" :reset="defaults.delay.mix"></knob>
+              </div>
+
+              <div class="echo-keys">
+                <button type="button" class="key" aria-label="Tap tempo" @click="tapTempo">
+                  <span ref="tempo" class="lamp red"></span>
+                  <span class="key-cap">Tap</span>
+                </button>
+                <button type="button" :class="['key', { on: isThrowing }]" aria-label="Throw (hold)"
+                  @pointerdown.prevent="startThrow" @pointerup="stopThrow" @pointerleave="stopThrow" @pointercancel="stopThrow" @contextmenu.prevent>
+                  <span :class="['lamp', 'red', { on: isThrowing }]"></span>
+                  <span class="key-cap">Throw</span>
+                </button>
+              </div>
+            </rack-unit>
+
+            <!-- 1U: spring reverb -->
+            <rack-unit :u="1" finish="cream" :seed="4" class="spring slim">
+              <header class="unit-title">
+                <b>Spring</b>
+                <span>Reverb Tank</span>
+              </header>
+
+              <bat-toggle v-model="values.isSpringEnabled" label="Spring on/off" class="mini"></bat-toggle>
+
+              <button type="button" class="spring-tank" title="Kick the springs" aria-label="Kick the springs" @click="kickSpring">
+                <svg viewBox="0 0 240 60" preserveAspectRatio="none" aria-hidden="true">
+                  <rect x="4" y="8" width="10" height="44" rx="2" class="spring-anchor" />
+                  <rect x="226" y="8" width="10" height="44" rx="2" class="spring-anchor" />
+                  <path v-for="y in [20, 40]" :key="y" class="spring-coil" :d="coilPath(y)" />
+                </svg>
+              </button>
+
+              <div class="slim-controls">
+                <knob v-model="values.spring.dwell" label="Dwell" :min="0" :max="1" :step="0.01" :scale="100" unit=" %" :reset="defaults.spring.dwell"></knob>
+                <knob v-model="values.spring.tone" label="Tone" :min="800" :max="8000" :step="10" taper="log" unit=" Hz" :reset="defaults.spring.tone"></knob>
+                <knob v-model="values.spring.mix" label="Mix" :min="0" :max="1" :step="0.01" :scale="100" unit=" %" :reset="defaults.spring.mix"></knob>
+              </div>
+            </rack-unit>
+
           </div>
         </div>
-      </div>
+      </main>
+
+      <button type="button" class="help-btn" :aria-expanded="isHelpOpen" aria-controls="help" aria-label="Shortcuts" @click.stop="isHelpOpen = !isHelpOpen">?</button>
+      <aside id="help" class="help" v-show="isHelpOpen" @click.stop>
+        <h2>Shortcuts</h2>
+        <dl>
+          <dt>Space</dt><dd>Siren (hold)</dd>
+          <dt>1 – 5</dt><dd>Presets</dd>
+          <dt>R</dt><dd>Random sound</dd>
+          <dt>Drag ↕ / wheel</dt><dd>Turn a knob</dd>
+          <dt>Shift</dt><dd>Fine adjust</dd>
+          <dt>Double-click</dt><dd>Reset a knob</dd>
+          <dt>Arrows</dt><dd>Focused knob or switch</dd>
+          <dt>E (hold)</dt><dd>Throw into the echo</dd>
+          <dt>T</dt><dd>Tap the echo tempo</dd>
+          <dt>Click springs</dt><dd>Kick the reverb tank</dd>
+          <dt>?</dt><dd>This card</dd>
+        </dl>
+      </aside>
     </div>
 
-    <script src="vendor/tuna.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@3.5.45/dist/vue.global.prod.js" integrity="sha384-K2FjvpG1y48yCE+7CBPhnKc16ShPmT3dlNwvoA3dhjV18+L5ugI0P8PWPvdjm/Fa" crossorigin="anonymous"></script>
+    <script src="engine.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
