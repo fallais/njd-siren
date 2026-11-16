@@ -1,0 +1,18 @@
+{
+  "name": "njd-siren-pcb",
+  "version": "1.0.0",
+  "description": "NJD siren + filter PCB (tscircuit)",
+  "scripts": {
+    "dev": "tsci dev",
+    "build": "tsci build --pcb-png --3d",
+    "check": "tsci check netlist && bun scripts/check-design-netlist.ts && tsci check placement && tsci build && bun scripts/check-connectivity.ts && tsci check shorts",
+    "fab": "tsci export index.circuit.tsx -f gerbers -o fab/njd-siren-gerbers.zip"
+  },
+  "license": "CC-BY-NC-SA-4.0",
+  "type": "commonjs",
+  "devDependencies": {
+    "bun": "^1.4.4",
+    "tscircuit": "^0.0.3206"
+  },
+  "private": true
+}
