@@ -9,7 +9,7 @@
  * FIRE / LATCH / POWER on the second. Wire connectors on the bottom edge.
  * Coordinates in mm, origin at the board centre, Y up.
  */
-import { design, type Group, type Part } from "./circuit/design"
+import { design, packages, type Part } from "./circuit/design"
 
 // JLCPCB parts, imported with `tsci import --jlcpcb --use-exact-footprint <C-number>`
 // (`footprint="jlcpcb:..."` strings do not load in the `tsci dev` view: tscircuit/tscircuit#4048).
@@ -56,16 +56,23 @@ const KNOBS: Record<string, { x: number; y: number }> = {
   RV11: { x: COLS[3], y: FILTER_Y }, // LFO > CUTOFF
 }
 
-/** centre of each block of small parts (auto-packed around its chips) */
-const BLOCKS: Record<Group, { x: number; y: number }> = {
-  lfo: { x: -62, y: -6 },
-  lfo2: { x: -31, y: -6 },
-  env: { x: 0, y: -6 },
-  vco: { x: 31, y: -6 },
-  vca: { x: 62, y: -6 },
-  power: { x: -62, y: -33 },
-  filter: { x: 0, y: -33 },
-  out: { x: 50, y: -33 },
+/**
+ * Small parts are packed in one cluster per chip (the chip + the parts wired to it), so chips
+ * never overlap. Cluster centres follow the signal path; "power" holds the 6 V reference parts.
+ */
+const CLUSTERS: Record<string, { x: number; y: number }> = {
+  U1: { x: -66, y: -2 }, // 6 V reference + LFO core
+  U9: { x: -50, y: -2 }, // LFO saw switch
+  U2: { x: -34, y: -2 }, // LFO shapes + selector buffer
+  U10: { x: -18, y: -2 }, // random sample & hold
+  U3: { x: -44, y: -30 }, // envelopes + pitch CV
+  U4: { x: 0, y: -2 }, // carrier comparator / shapes
+  U11: { x: 18, y: -2 }, // carrier saw switch
+  U7: { x: 36, y: -2 }, // carrier OTA + VCA
+  U5: { x: 62, y: -2 }, // VCA buffer, drive, cutoff CV
+  U8: { x: -12, y: -30 }, // filter OTAs
+  U6: { x: 14, y: -30 }, // filter buffers
+  OUT: { x: 40, y: -30 }, // volume output
 }
 
 // ---------------------------------------------------------------- parts
@@ -125,22 +132,39 @@ function smallPart(p: Part) {
   }
 }
 
-function Block({ group }: { group: Group }) {
-  const parts = design.filter((p) => p.group === group)
-  // a package shared by several blocks is placed in the block of its first section
-  const home = (pkg: string) => design.find((p) => (p.t === "OPA" || p.t === "OTA") && p.pkg === pkg)!.group
-  const opamps = [...new Set(parts.flatMap((p) => (p.t === "OPA" && home(p.pkg) === group ? [p.pkg] : [])))]
-  const otas = [...new Set(parts.flatMap((p) => (p.t === "OTA" && home(p.pkg) === group ? [p.pkg] : [])))]
-  const switches = parts.filter((p) => p.t === "SW").map((p) => p.ref)
-  const at = BLOCKS[group]
+/** chip each small part belongs to: the package it shares the most nets with (same block first) */
+const CHIP_PINS: Record<string, Set<string>> = {}
+for (const p of design) {
+  if (p.t === "OPA" || p.t === "OTA") (CHIP_PINS[p.pkg] ??= new Set()).add(p.p).add(p.m).add(p.o).add(p.t === "OTA" ? p.abc : p.o)
+  if (p.t === "SW") (CHIP_PINS[p.ref] ??= new Set()).add(p.io1).add(p.io2).add(p.ctl)
+}
+const RAILS = new Set(["GND", "V12", "VREF"])
+const partNets = (p: Part): string[] =>
+  p.t === "R" || p.t === "C" ? [p.a, p.b] : p.t === "D" ? [p.anode, p.cathode] : []
+function clusterOf(p: Part): string {
+  const nets = partNets(p).filter((n) => !RAILS.has(n))
+  let best = "OUT", score = 0
+  for (const [chip, pins] of Object.entries(CHIP_PINS)) {
+    const s = nets.filter((n) => pins.has(n)).length
+    if (s > score) { best = chip; score = s }
+  }
+  // parts only touching rails / pots (reference divider, pot end resistors...): keep them by block
+  if (score === 0) best = { power: "U1", lfo: "U1", lfo2: "U2", env: "U3", vco: "U3", vca: "U5", filter: "U5", out: "OUT" }[p.group]
+  return best
+}
+
+function Cluster({ chip }: { chip: string }) {
+  const parts = design.filter((p) => ["R", "C", "D"].includes(p.t) && clusterOf(p) === chip)
+  const at = CLUSTERS[chip]
+  const isOpamp = packages.opamp.includes(chip), isOta = packages.ota.includes(chip), isSw = packages.switch.includes(chip)
+  const sw = isSw ? (design.find((p) => p.ref === chip) as Part) : undefined
   return (
-    <group name={`blk_${group}`} pcbPack pcbPackGap="0.8mm" pcbX={at.x} pcbY={at.y}>
-      {opamps.map((pkg) => <OpampPackage key={pkg} pkg={pkg} />)}
-      {otas.map((pkg) => <OtaPackage key={pkg} pkg={pkg} />)}
+    <group name={`cl_${chip}`} pcbPack pcbPackGap="0.6mm" pcbX={at.x} pcbY={at.y}>
+      {isOpamp && <OpampPackage pkg={chip} />}
+      {isOta && <OtaPackage pkg={chip} />}
+      {sw && smallPart(sw)}
       {/* 100 nF decoupling next to every chip */}
-      {[...opamps, ...otas, ...switches].map((u) => (
-        <capacitor key={`C_${u}`} name={`C${u}`} capacitance="100nF" footprint="0603" connections={{ pin1: net("V12"), pin2: net("GND") }} />
-      ))}
+      {(isOpamp || isOta || isSw) && <capacitor name={`C${chip}`} capacitance="100nF" footprint="0603" connections={{ pin1: net("V12"), pin2: net("GND") }} />}
       {parts.map(smallPart)}
     </group>
   )
@@ -183,7 +207,7 @@ export default () => {
   const sel = (ref: string) => design.find((p) => p.ref === ref) as Extract<Part, { t: "SEL" }>
   return (
     <board width={`${W}mm`} height={`${H}mm`} borderRadius="3mm" title="NJD siren + filter"
-      nominalTraceWidth="0.3mm" minTraceWidth="0.2mm">
+      nominalTraceWidth="0.3mm" minTraceWidth="0.2mm" routeRemaining>
       <Label text="SIREN" x={-W / 2 + 10} y={SIREN_Y + 12} size={2} />
       <Label text="FILTER" x={-W / 2 + 10} y={FILTER_Y + 12} size={2} />
 
@@ -217,8 +241,8 @@ export default () => {
       <capacitor name="C91" capacitance="22uF" footprint="0805" connections={{ pin1: net("V12"), pin2: net("GND") }}
         pcbX={-W / 2 + 35} pcbY={-H / 2 + 8} />
 
-      {/* ===== blocks of small parts ===== */}
-      {(Object.keys(BLOCKS) as Group[]).map((g) => <Block key={g} group={g} />)}
+      {/* ===== small parts, clustered around their chip ===== */}
+      {Object.keys(CLUSTERS).map((chip) => <Cluster key={chip} chip={chip} />)}
 
       {/* ===== wire connectors on the bottom edge ===== */}
       <Selector p={sel("J4")} x={-20} y={-H / 2 + 7} />
