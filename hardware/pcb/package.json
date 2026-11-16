@@ -6,7 +6,7 @@
     "dev": "tsci dev",
     "build": "tsci build --pcb-png --3d",
     "check": "tsci check netlist && bun scripts/check-design-netlist.ts && tsci check placement && tsci build && bun scripts/check-connectivity.ts && tsci check shorts",
-    "fab": "tsci export index.circuit.tsx -f gerbers -o fab/njd-siren-gerbers.zip"
+    "fab": "mkdir -p fab && tsci export index.circuit.tsx -f gerbers -o fab/njd-siren-gerbers.zip"
   },
   "license": "CC-BY-NC-SA-4.0",
   "type": "commonjs",

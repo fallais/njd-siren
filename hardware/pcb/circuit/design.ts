@@ -60,13 +60,14 @@ OPA("lfo", "U1", "C", "VREF", "INTG", "TRI")
 // square, scaled to the triangle's ±2.7 V
 R("lfo", "R7", 12e3, "SQ", "SQR")
 R("lfo", "R8", 10e3, "SQR", "VREF")
-// sine: triangle rounded by two diodes each way, then amplified
-R("lfo", "R9", 4.7e3, "TRI", "SNN")
+// sine: triangle halved (10k/10k), rounded by two diodes each way (1.4 % THD), then x2.8
+R("lfo", "R9", 10e3, "TRI", "SNN")
+R("lfo", "R73", 10e3, "SNN", "VREF")
 D("lfo", "D3", "SNN", "SN1"); D("lfo", "D4", "SN1", "VREF")
 D("lfo", "D5", "VREF", "SN2"); D("lfo", "D6", "SN2", "SNN")
 OPA("lfo", "U1", "D", "SNN", "SNF", "SINE")
 R("lfo", "R10", 10e3, "SNF", "VREF")
-R("lfo", "R11", 14e3, "SINE", "SNF")
+R("lfo", "R11", 18e3, "SINE", "SNF")
 // saw: triangle at gain +1 or -1 depending on the square (twice the LFO rate)
 R("lfo2", "R12", 10e3, "TRI", "SWM")
 R("lfo2", "R13", 10e3, "SAW", "SWM")
@@ -90,12 +91,14 @@ R("lfo2", "R18", 1e6, "LSEL", "VREF")
 OPA("lfo2", "U2", "D", "LSEL", "LFO", "LFO")
 
 // ---------------------------------------------------------------- envelopes
-// release: fast charge while GATE is high, discharge through the RELEASE pot
+// release: fast charge while GATE is high; once it drops, discharge through the RELEASE pot
+// into the buffered gate (the diode blocks that path while the note is held)
 D("env", "D7", "GATE", "EN1")
 R("env", "R19", 100, "EN1", "ENV")
 C("env", "C6", 100e-6, "ENV", "GND", { size: "elec", ic: 0 }) // + to ENV
-R("env", "R20", 100, "ENV", "REL1")
-POT("env", "RV6", "release", "RELEASE", 10e3, "REL1", "GND")
+R("env", "R20", 330, "ENV", "REL1")
+POT("env", "RV6", "release", "RELEASE", 10e3, "REL1", "REL2")
+D("env", "D17", "REL2", "GATEB")
 OPA("env", "U3", "A", "ENV", "ENVB", "ENVB")
 // sweep: GATE step (4 V) high-passed by the GLIDE pot, bipolar SWEEP pot
 R("env", "R21", 22e3, "GATE", "GS")
@@ -115,7 +118,7 @@ R("vco", "R26", 2.2e3, "V12", "TONE_T")
 POT("vco", "RV1", "tone", "TONE", 10e3, "TONE_T", "TONE_W", "TONE_B")
 R("vco", "R27", 2.2e3, "TONE_B", "GND")
 POT("vco", "RV3", "depth", "DEPTH", 10e3, "VREF", "DEP_W", "LFO")
-R("vco", "R28", 22e3, "TONE_W", "CVM")
+R("vco", "R28", 18e3, "TONE_W", "CVM")
 R("vco", "R29", 22e3, "DEP_W", "CVM")
 R("vco", "R30", 33e3, "SWPW", "CVM")
 R("vco", "R31", 22e3, "CV", "CVM")
@@ -133,12 +136,13 @@ R("vco", "R37", 1e3, "OSCP", "VREF")
 // carrier shapes
 R("vco", "R38", 12e3, "SQ_C", "SQR_C")
 R("vco", "R39", 10e3, "SQR_C", "VREF")
-R("vco", "R40", 4.7e3, "TRI_C", "CSNN")
+R("vco", "R40", 10e3, "TRI_C", "CSNN")
+R("vco", "R74", 10e3, "CSNN", "VREF")
 D("vco", "D9", "CSNN", "CS1"); D("vco", "D10", "CS1", "VREF")
 D("vco", "D11", "VREF", "CS2"); D("vco", "D12", "CS2", "CSNN")
 OPA("vco", "U4", "D", "CSNN", "CSNF", "SINE_C")
 R("vco", "R41", 10e3, "CSNF", "VREF")
-R("vco", "R42", 14e3, "SINE_C", "CSNF")
+R("vco", "R42", 18e3, "SINE_C", "CSNF")
 R("vco", "R43", 10e3, "TRI_C", "CSWM")
 R("vco", "R44", 10e3, "SAW_C", "CSWM")
 R("vco", "R45", 10e3, "TRI_C", "CSWP")
@@ -154,7 +158,7 @@ R("vca", "R48", 1e3, "VCAP", "VREF")
 R("vca", "R49", 1e3, "VCAM", "VREF")
 R("vca", "R50", 47e3, "ENVB", "ABC2")
 OTA("vca", "U7", "B", "VCAP", "VCAM", "VCAO", "ABC2")
-R("vca", "R51", 6.8e3, "VCAO", "VREF")
+R("vca", "R51", 3.3e3, "VCAO", "VREF")
 OPA("vca", "U5", "A", "VCAO", "VCA", "VCA")
 
 // ---------------------------------------------------------------- Filter: drive + soft clip + 2-pole OTA low-pass
@@ -197,7 +201,7 @@ OTA("filter", "U8", "B", "F2P", "F2M", "F2O", "FABC2")
 C("filter", "C10", 1e-9, "F2O", "VREF", { ic: 0 })
 OPA("filter", "U6", "B", "F2O", "FOUT", "FOUT")
 // spare op-amp sections: followers of VREF
-OPA("filter", "U6", "C", "VREF", "SPARE_C", "SPARE_C")
+OPA("env", "U6", "C", "GATE", "GATEB", "GATEB") // gate buffer for the release path
 OPA("filter", "U6", "D", "VREF", "SPARE_D", "SPARE_D")
 
 // ---------------------------------------------------------------- output

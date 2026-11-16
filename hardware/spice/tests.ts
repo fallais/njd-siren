@@ -26,7 +26,7 @@ const scenarios: Record<string, () => Promise<void>> = {
   async speed() {
     for (const speed of [0, 0.5, 1]) {
       const tstop = speed === 0 ? 3 : 0.8
-      const { time, get } = await run({ speed, depth: 0 }, tstop, 2e-5)
+      const { time, get } = await run({ speed, depth: 0 }, tstop, 2e-5, ["SQ"])
       console.log(`speed ${speed}: LFO ${mean(freqs(crossings(time, get("SQ"), 6, tstop * 0.2))).toFixed(2)} Hz`)
     }
   },
@@ -48,7 +48,7 @@ const scenarios: Record<string, () => Promise<void>> = {
   },
   async release() {
     for (const release of [0, 0.3, 1]) {
-      const { time, get } = await run({ release, depth: 0, gate: { on: 0.02, off: 0.12 } }, 3.0, 4e-5)
+      const { time, get } = await run({ release, depth: 0, gate: { on: 0.02, off: 0.12 } }, release === 1 ? 3.0 : 1.2, 4e-5, ["ENVB", "VCA"])
       const env = get("ENVB")
       const [, peak] = range(time, env, 0.05, 0.12)
       const i = time.findIndex((t, k) => t > 0.12 && env[k] < 1.2 + (peak - 1.2) * 0.1)
@@ -75,7 +75,7 @@ const scenarios: Record<string, () => Promise<void>> = {
   },
   async drive() {
     for (const drive of [0, 0.5, 1]) {
-      const { time, get } = await run({ drive, depth: 0, carrier: "sine", cutoff: 1 }, 0.08, 2e-6)
+      const { time, get } = await run({ drive, depth: 0, carrier: "sine", cutoff: 1, gate: { on: 0.005, off: 10 } }, 0.08, 2e-6)
       const cc = crossings(time, get("SQ_C"), 6, 0.05)
       console.log(`drive ${drive}: ${spark(time, get("CLP"), cc[0], cc[1])}`)
     }

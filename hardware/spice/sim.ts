@@ -9,10 +9,10 @@ export const defaults: Settings = {
   gate: { on: 0.05, off: 10 },
 }
 
-export async function run(over: Partial<Settings>, tstop: number, tstep = 5e-6) {
+export async function run(over: Partial<Settings>, tstop: number, tstep = 5e-6, save?: string[]) {
   const sim = new Simulation()
   await sim.start()
-  sim.setNetList(netlist({ ...defaults, ...over }, tstop, tstep))
+  sim.setNetList(netlist({ ...defaults, ...over }, tstop, tstep, save))
   const r: any = await sim.runSim()
   const get = (n: string) => r.data.find((d: any) => d.name.toLowerCase() === `v(${n.toLowerCase()})`)?.values as number[]
   return { time: r.data[0].values as number[], get, names: r.data.map((d: any) => d.name) }

@@ -54,13 +54,15 @@ function line(p: Part, s: Settings): string {
   }
 }
 
-export function netlist(s: Settings, tstop: number, tstep = 5e-6) {
+export function netlist(s: Settings, tstop: number, tstep = 5e-6, save?: string[]) {
   return [
     "NJD siren (generated from hardware/pcb/circuit/design.ts)",
     MODELS,
     "V12 V12 0 12",
     `VG GATE 0 PULSE(0 12 ${s.gate.on} 1m 1m ${s.gate.off - s.gate.on} 100)`,
     ...design.map((p) => line(p, s)),
+    // keep only the probed nodes: long runs otherwise exhaust the WASM heap
+    ...(save ? [`.save ${save.map((x) => `v(${x})`).join(" ")}`] : []),
     ".options method=gear reltol=1e-3 abstol=1e-10 vntol=1e-5 itl4=50",
     `.tran ${tstep} ${tstop} 0 ${tstep} uic`,
     ".end",
