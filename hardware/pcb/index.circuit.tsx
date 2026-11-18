@@ -5,7 +5,7 @@
  * ./circuit/design.ts, the same file the SPICE simulation uses (../spice). This file only
  * decides which real parts implement it and where they go on the board.
  *
- * 12 V DC in. Front panel = top of the board: SIREN knobs on the first row, FILTER knobs,
+ * 4 layers: top / GND plane / 12 V plane / bottom. 12 V DC in. Front panel = top of the board: SIREN knobs on the first row, FILTER knobs,
  * FIRE / LATCH / POWER on the second. Wire connectors on the bottom edge.
  * Coordinates in mm, origin at the board centre, Y up.
  */
@@ -141,7 +141,10 @@ for (const p of design) {
 const RAILS = new Set(["GND", "V12", "VREF"])
 const partNets = (p: Part): string[] =>
   p.t === "R" || p.t === "C" ? [p.a, p.b] : p.t === "D" ? [p.anode, p.cathode] : []
+/** parts whose nets alone do not say where they belong (passive sum nodes) */
+const PLACE: Record<string, string> = { R76: "U2", R78: "U2", R81: "U4" }
 function clusterOf(p: Part): string {
+  if (PLACE[p.ref]) return PLACE[p.ref]
   const nets = partNets(p).filter((n) => !RAILS.has(n))
   let best = "OUT", score = 0
   for (const [chip, pins] of Object.entries(CHIP_PINS)) {
@@ -206,7 +209,7 @@ export default () => {
   const pots = design.filter((p): p is Extract<Part, { t: "POT" }> => p.t === "POT")
   const sel = (ref: string) => design.find((p) => p.ref === ref) as Extract<Part, { t: "SEL" }>
   return (
-    <board width={`${W}mm`} height={`${H}mm`} borderRadius="3mm" title="NJD siren + filter"
+    <board width={`${W}mm`} height={`${H}mm`} borderRadius="3mm" title="NJD siren + filter" layers={4}
       nominalTraceWidth="0.3mm" minTraceWidth="0.2mm" routeRemaining>
       <Label text="SIREN" x={-W / 2 + 10} y={SIREN_Y + 12} size={2} />
       <Label text="FILTER" x={-W / 2 + 10} y={FILTER_Y + 12} size={2} />
@@ -252,6 +255,9 @@ export default () => {
       <HX25003_2A name="J3" connections={{ pin1: net("OUT"), pin2: net("GND") }} pcbX={60} pcbY={-H / 2 + 7} />
       <Label text="OUT (tip, gnd)" x={60} y={-H / 2 + 13} size={1.2} />
 
+      {/* 4 layers: signals top/bottom, solid GND plane on inner1, 12 V plane on inner2 */}
+      <copperpour connectsTo="net.GND" layer="inner1" clearance="0.3mm" unbroken />
+      <copperpour connectsTo="net.V12" layer="inner2" clearance="0.3mm" unbroken />
       <copperpour connectsTo="net.GND" layer="bottom" clearance="0.3mm" />
       <hole name="H1" diameter="3.2mm" pcbX={-W / 2 + 4} pcbY={H / 2 - 4} />
       <hole name="H2" diameter="3.2mm" pcbX={W / 2 - 4} pcbY={H / 2 - 4} />

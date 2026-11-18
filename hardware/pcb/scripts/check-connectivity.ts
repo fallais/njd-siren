@@ -1,7 +1,9 @@
 /**
  * Geometric routing check on a built circuit.json: for every net, are all its pads
- * joined by copper (traces + vias + pads)? The ground pour is ignored, so GND must
- * also be fully traced or reach the pour (reported separately).
+ * joined by copper (traces + vias + pads)? Vias and through-holes span every layer. An
+ * inner-layer plane (copper pour on inner1/inner2) joins every via, through-hole and
+ * inner-layer trace of its net. The bottom ground pour is ignored: GND islands that only
+ * the bottom pour would join are reported separately.
  *
  * Usage: bun scripts/check-connectivity.ts dist/index/circuit.json
  */
@@ -26,6 +28,14 @@ const union = (a: number, b: number) => { parent[find(a)] = find(b) }
 const add = (n: Omit<Node, "id">) => { const id = nodes.length; nodes.push({ ...n, id }); parent.push(id); return id }
 
 const EPS = 0.02
+const ALL = ["top", "inner1", "inner2", "bottom"]
+// inner planes: one copper node per (layer, net)
+const planeNet: Record<string, string> = {}
+for (const pour of byType("pcb_copper_pour"))
+  if (pour.layer.startsWith("inner")) {
+    const sn = byType("source_net").find((n) => n.source_net_id === pour.source_net_id)
+    if (sn) planeNet[pour.layer] = sn.subcircuit_connectivity_map_key
+  }
 for (const pad of byType("pcb_smtpad")) {
   const sp = sourcePort[pcbPortToSource[pad.pcb_port_id]]
   if (!sp) continue
@@ -36,23 +46,23 @@ for (const pad of byType("pcb_smtpad")) {
 for (const hole of byType("pcb_plated_hole")) {
   const sp = sourcePort[pcbPortToSource[hole.pcb_port_id]]
   const r = Math.max(hole.outer_diameter ?? 0, hole.outer_width ?? 0, hole.outer_height ?? 0, hole.hole_diameter ?? 0) / 2 + EPS
-  add({ layers: ["top", "bottom"], hit: (p) => Math.hypot(p.x - hole.x, p.y - hole.y) <= r,
+  add({ layers: ALL, hit: (p) => Math.hypot(p.x - hole.x, p.y - hole.y) <= r,
     label: sp ? `${sourceComponentName[sp.source_component_id]}.${sp.name}` : undefined, net: sp ? netOfSourcePort[sp.source_port_id] : undefined })
 }
-const vias = byType("pcb_via").map((v) => add({ layers: ["top", "bottom"], hit: (p) => Math.hypot(p.x - v.x, p.y - v.y) <= (v.outer_diameter ?? 0.6) / 2 + EPS }))
+const vias = byType("pcb_via").map((v) => add({ layers: ALL, net: v.subcircuit_connectivity_map_key, hit: (p) => Math.hypot(p.x - v.x, p.y - v.y) <= (v.outer_diameter ?? 0.6) / 2 + EPS }))
 
 // Each trace is a chain of points; consecutive wire points on the same layer are joined.
 for (const t of byType("pcb_trace")) {
   let prev: number | undefined
   for (const pt of t.route) {
     const layer = pt.route_type === "via" ? "via" : pt.layer
-    const id = add({ layers: layer === "via" ? ["top", "bottom"] : [layer], hit: () => false })
+    const id = add({ layers: layer === "via" ? ALL : [layer], hit: () => false, net: t.subcircuit_connectivity_map_key })
     if (prev !== undefined) union(prev, id)
     prev = id
     // join this point to any pad / via it lands on
     for (const n of nodes) {
       if (n.id === id || n.hit === undefined) continue
-      const layers = layer === "via" ? ["top", "bottom"] : [layer]
+      const layers = layer === "via" ? ALL : [layer]
       if (layers.some((l) => n.hit({ x: pt.x, y: pt.y }, l))) union(id, n.id)
     }
     // join to other trace points at the same spot and layer
@@ -66,6 +76,14 @@ for (let i = 0; i < tracePts.length; i++)
     const sameLayer = a.layer === b.layer || a.layer === "via" || b.layer === "via"
     if (sameLayer && Math.abs(a.x - b.x) < EPS && Math.abs(a.y - b.y) < EPS) union(tracePts[i].id, tracePts[j].id)
   }
+
+// Planes: join every via / through-hole / inner trace point of the plane's net.
+for (const [layer, key] of Object.entries(planeNet)) {
+  const plane = add({ layers: [layer], hit: () => false })
+  for (const n of nodes)
+    if (n.id !== plane && n.net === key && n.layers.includes(layer)) union(plane, n.id)
+  console.log(`${layer} plane: ${netName[key] ?? key}`)
+}
 
 // Report nets whose pads are split into several copper islands.
 const pads = nodes.filter((n) => n.label && n.net)

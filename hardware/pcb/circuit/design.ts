@@ -68,15 +68,22 @@ D("lfo", "D5", "VREF", "SN2"); D("lfo", "D6", "SN2", "SNN")
 OPA("lfo", "U1", "D", "SNN", "SNF", "SINE")
 R("lfo", "R10", 10e3, "SNF", "VREF")
 R("lfo", "R11", 18e3, "SINE", "SNF")
-// saw: triangle at gain +1 or -1 depending on the square (twice the LFO rate)
+// saw: the triangle folded (gain +1 or -1 depending on the square) runs at twice the LFO
+// rate; adding the square, scaled to the triangle peak, joins the two halves into one ramp
+// at the LFO rate: SAW = (FOLD + SQR) / 2. The 10k/22k ratio (= R3/R4) cancels the
+// mid-period step; R77 only sets the level (±2.7 V into the 1M selector load).
 R("lfo2", "R12", 10e3, "TRI", "SWM")
-R("lfo2", "R13", 10e3, "SAW", "SWM")
+R("lfo2", "R13", 10e3, "FOLD", "SWM")
 R("lfo2", "R14", 10e3, "TRI", "SWP")
 SW("lfo2", "U9", "SWP", "VREF", "SQ")
-OPA("lfo2", "U2", "A", "SWP", "SWM", "SAW")
-// ramp down: inverted saw
-R("lfo2", "R15", 10e3, "SAW", "RMM")
-R("lfo2", "R16", 10e3, "RAMP", "RMM")
+OPA("lfo2", "U2", "A", "SWP", "SWM", "FOLD")
+R("lfo2", "R75", 10e3, "FOLD", "SAW")
+R("lfo2", "R76", 22e3, "SQ", "SAW")
+R("lfo2", "R77", 18e3, "SAW", "VREF")
+// ramp down: -(FOLD + SQR) / 2, same 10k/22k ratio
+R("lfo2", "R15", 10e3, "FOLD", "RMM")
+R("lfo2", "R78", 22e3, "SQ", "RMM")
+R("lfo2", "R16", 5.1e3, "RAMP", "RMM")
 OPA("lfo2", "U2", "B", "VREF", "RMM", "RAMP")
 // random steps: sample the carrier triangle on every rising edge of the LFO square
 C("lfo2", "C4", 1e-9, "SQ", "RDP")
@@ -143,11 +150,16 @@ D("vco", "D11", "VREF", "CS2"); D("vco", "D12", "CS2", "CSNN")
 OPA("vco", "U4", "D", "CSNN", "CSNF", "SINE_C")
 R("vco", "R41", 10e3, "CSNF", "VREF")
 R("vco", "R42", 18e3, "SINE_C", "CSNF")
+// saw: folded triangle + square, as for the LFO (otherwise it plays an octave up);
+// R81 sets the level into the 48k VCA input
 R("vco", "R43", 10e3, "TRI_C", "CSWM")
-R("vco", "R44", 10e3, "SAW_C", "CSWM")
+R("vco", "R44", 10e3, "FOLD_C", "CSWM")
 R("vco", "R45", 10e3, "TRI_C", "CSWP")
 SW("vco", "U11", "CSWP", "VREF", "SQ_C")
-OPA("vco", "U4", "C", "CSWP", "CSWM", "SAW_C")
+OPA("vco", "U4", "C", "CSWP", "CSWM", "FOLD_C")
+R("vco", "R79", 10e3, "FOLD_C", "SAW_C")
+R("vco", "R80", 22e3, "SQ_C", "SAW_C")
+R("vco", "R81", 30e3, "SAW_C", "VREF")
 parts.push({ t: "SEL", group: "vco", ref: "J5", label: "CARRIER", com: "CAR",
   throws: ["SINE_C", "SQR_C", "SAW_C", "TRI_C"], names: ["sine", "sqr", "saw", "tri"] })
 R("vco", "R46", 1e6, "CAR", "VREF")
