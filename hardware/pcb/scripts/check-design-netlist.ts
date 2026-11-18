@@ -1,11 +1,13 @@
 /**
- * Check that the board (index.circuit.tsx) wires exactly what circuit/design.ts describes.
- * Reads `tsci check netlist` output and compares it, net by net, with the design.
+ * Check that the two boards (index.circuit.tsx = main, front.circuit.tsx = front), joined by the
+ * ribbon, wire exactly what circuit/design.ts describes. Reads `tsci check netlist` for each board,
+ * merges them by net name and compares them, net by net, with the design.
  *
  * Usage: bun scripts/check-design-netlist.ts
  */
 import { $ } from "bun"
 import { design } from "../circuit/design"
+import { RIBBON, SELECTOR_COMMON_PIN, selectorThrowPin } from "../circuit/boards"
 
 const TLC = { A: { o: 1, m: 2, p: 3 }, B: { p: 5, m: 6, o: 7 }, C: { o: 8, m: 9, p: 10 }, D: { p: 12, m: 13, o: 14 } } as const
 const LM = { A: { abc: 1, p: 3, m: 4, o: 5 }, B: { o: 12, m: 13, p: 14, abc: 16 } } as const
@@ -26,26 +28,32 @@ for (const p of design) {
       if (!pkgs.has(p.pkg)) { pkgs.add(p.pkg); for (const [n, pin] of [["GND", 6], ["V12", 11], ["GND", 7], ["GND", 10]] as const) add(n, `${p.pkg}.pin${pin}`); add("V12", `C${p.pkg}.pin1`); add("GND", `C${p.pkg}.pin2`) } break }
     case "SW": add(p.io1, `${p.ref}.pin1`); add(p.io2, `${p.ref}.pin2`); add("GND", `${p.ref}.pin3`); add(p.ctl, `${p.ref}.pin4`); add("V12", `${p.ref}.pin5`)
       add("V12", `C${p.ref}.pin1`); add("GND", `C${p.ref}.pin2`); break
-    case "SEL": add(p.com, `${p.ref}.pin1`); p.throws.forEach((t, i) => add(t, `${p.ref}.pin${i + 2}`)); break
+    case "SEL": add(p.com, `${p.ref}.pin${SELECTOR_COMMON_PIN}`); p.throws.forEach((t, i) => add(t, `${p.ref}.pin${selectorThrowPin(i, p.throws.length)}`)); break
   }
 }
 // board-only parts (switches, power, connectors)
 const extra: [string, string][] = [
-  ["V12", "SW1.pin1"], ["GATE", "SW1.pin4"], ["V12", "SW2.pin2"], ["GATE", "SW2.pin1"], ["VIN", "SW3.pin2"], ["VSW", "SW3.pin1"],
-  ["LED_A", "D2.pin2"], ["GND", "D2.pin1"], ["V12", "R90.pin1"], ["LED_A", "R90.pin2"], ["GATE", "R91.pin1"], ["GND", "R91.pin2"],
+  // front: FIRE wires, LATCH, POWER, power LED
+  ["V12", "J8.pin1"], ["GATE", "J8.pin2"], ["V12", "SW2.pin2"], ["GATE", "SW2.pin1"], ["VIN", "SW3.pin2"], ["VSW", "SW3.pin1"],
+  ["LED_A", "D2.pin2"], ["GND", "D2.pin1"], ["V12", "R90.pin1"], ["LED_A", "R90.pin2"],
+  // main: GATE pull-down, power input, output
+  ["GATE", "R91.pin1"], ["GND", "R91.pin2"],
   ["VIN", "J1.pin1"], ["GND", "J1.pin2"], ["GND", "J1.pin3"], ["VSW", "D1.pin2"], ["V12", "D1.pin1"],
   ["V12", "C90.pin1"], ["GND", "C90.pin2"], ["V12", "C91.pin1"], ["GND", "C91.pin2"],
   ["OUT", "J3.pin1"], ["GND", "J3.pin2"],
+  // the ribbon, both ends
+  ...RIBBON.flatMap((n, i): [string, string][] => [[n, `J6.pin${i + 1}`], [n, `J7.pin${i + 1}`]]),
 ]
 for (const [n, pin] of extra) add(n, pin)
 
-// actual, from tsci
-const text = await $`npx tsci check netlist`.cwd(import.meta.dir + "/..").quiet().text()
+// actual, from tsci (both boards; nets of the same name meet through the ribbon)
+const text = (await Promise.all(["index.circuit.tsx", "front.circuit.tsx"].map((f) =>
+  $`npx tsci check netlist ${f}`.cwd(import.meta.dir + "/..").quiet().text()))).join("\n")
 const got = new Map<string, Set<string>>()
 let cur = ""
 for (const line of text.split("\n")) {
   const m = line.match(/^NET: (\S+)/)
-  if (m) { cur = m[1]; got.set(cur, new Set()); continue }
+  if (m) { cur = m[1]; if (!got.has(cur)) got.set(cur, new Set()); continue }
   const e = line.match(/^ {2}- (\S+) (\S+)/)
   if (e && cur) {
     // pins are printed as pinN, or by label (anode, cathode, VDD_GND, EH1...); normalise to pinN via the "(...)" hint where needed
@@ -72,5 +80,5 @@ for (const n of [...nets].sort()) {
     console.log(`${n}: missing [${missing.join(", ")}] unexpected [${extraPins.join(", ")}]`)
   }
 }
-console.log(bad ? `${bad} nets differ from the design` : `board matches the design: ${nets.size} nets`)
+console.log(bad ? `${bad} nets differ from the design` : `front + main boards match the design: ${nets.size} nets`)
 process.exit(bad ? 1 : 0)

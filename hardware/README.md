@@ -1,14 +1,24 @@
 # NJD siren hardware
 
-Analog version of the **Siren** and **Filter** units, as a PCB. Work in progress.
+Analog version of the **Siren** and **Filter** units, in a 2U 19" rack case. Work in progress.
 
 - `pcb/circuit/design.ts`: the circuit, described once.
-- `pcb/`: the board ([tscircuit](https://tscircuit.com)). `npm install && npm run dev`, then open http://localhost:3020.
+- `pcb/circuit/boards.ts`: how it splits across the two boards, and the ribbon pinout.
+- `pcb/`: the boards ([tscircuit](https://tscircuit.com)). `npm install && npm run dev`, then open http://localhost:3020. `npm run check` runs every check, `npm run fab` writes the Gerbers.
 - `spice/`: simulation of the same circuit (ngspice). `bun tests.ts`.
-- `panel/`: the 2U rack facade. `panel.ts` places every control (the front PCB will use the same positions), `bun facade.ts` draws `facade.svg` (real size, mm; `#cut` and `#print` layers).
+- `panel/`: the 2U facade. `panel.ts` places every control, `bun facade.ts` draws `facade.svg` (real size, mm; `#cut` and `#print` layers).
 
-Power: 12 V DC adapter (5.5/2.1 mm, centre positive).
+## Two boards
 
-Board: 4 layers (top signals, GND plane, 12 V plane, bottom signals + ground pour), 0.2/0.3 mm vias (JLCPCB multilayer minimum).
+- **Front board** (`pcb/front.circuit.tsx`, 350 x 72 mm, 2 layers): right behind the facade, held by the pot and switch nuts. Pots, the two wave selectors, LATCH, POWER and the power LED, at the positions of `panel/panel.ts`. The FIRE button (24 mm, panel-mount) is too deep for the board: it is wired to J8.
+- **Main board** (`pcb/index.circuit.tsx`, 176 x 96 mm, 4 layers: top signals, GND plane, 12 V plane, bottom signals + ground pour): all the electronics, flat in the chassis against the rear panel. 12 V DC jack (J1) and OUT (J3, wired to the rear jack) on the rear edge.
+- **Ribbon**: 50-way IDC, 2x25 2.54 mm box headers J6 (main) and J7 (front), straight through. Conductors are grouped by function with ground between groups (`RIBBON` in `boards.ts`).
 
-Two parts are not on the board yet: the **LFO WAVE** and **CARRIER** selectors are 1-pole 12-position rotary switches with an adjustable stop (Lorlin CK1049 or Alpha SR2611F), wired to the J4 and J5 connectors. They move to the front PCB (PCB-mount version) when the board is split: front PCB behind the 2U facade, main PCB flat in the chassis, joined by a ribbon cable; jacks on the rear.
+Power: 12 V DC adapter (5.5/2.1 mm, centre positive). Vias 0.2/0.3 mm (JLCPCB multilayer minimum).
+
+## To check on the real parts
+
+- **Wave selectors**: Alps SRRM1C6200 (1 pole, 12 positions). The throw wired to each facade position assumes the knob pointer lines up with the rotor contact (`selectorThrowPin` in `boards.ts`); check with a meter and set the stop to 6 positions (LFO WAVE) and 4 (CARRIER) if the part has one. It is a shorting type: two shapes touch for an instant while turning.
+- **Panel holes** (`HOLE` in `panel.ts`) against the bushings bought; pots, selectors and toggles must reach through the panel from the same board.
+- **LATCH / POWER**: ON printed up, check which way the toggles close.
+- **Power LED**: 0805 on the front board, needs a light pipe to the 3.2 mm hole.

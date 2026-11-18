@@ -1,12 +1,12 @@
 {
   "name": "njd-siren-pcb",
   "version": "1.0.0",
-  "description": "NJD siren + filter PCB (tscircuit)",
+  "description": "NJD siren + filter PCBs (tscircuit): main board + front board",
   "scripts": {
     "dev": "tsci dev",
     "build": "tsci build --pcb-png --3d",
-    "check": "tsci check netlist && bun scripts/check-design-netlist.ts && tsci check placement && tsci build && bun scripts/check-connectivity.ts && tsci check shorts",
-    "fab": "mkdir -p fab && tsci export index.circuit.tsx -f gerbers -o fab/njd-siren-gerbers.zip"
+    "check": "tsci check netlist index.circuit.tsx && tsci check netlist front.circuit.tsx && bun scripts/check-design-netlist.ts && tsci check placement index.circuit.tsx && tsci check placement front.circuit.tsx && tsci build && bun scripts/check-connectivity.ts dist/index/circuit.json && bun scripts/check-connectivity.ts dist/front/circuit.json && tsci check shorts index.circuit.tsx && tsci check shorts front.circuit.tsx",
+    "fab": "mkdir -p fab && tsci export index.circuit.tsx -f gerbers -o fab/njd-siren-main-gerbers.zip && tsci export front.circuit.tsx -f gerbers -o fab/njd-siren-front-gerbers.zip"
   },
   "license": "CC-BY-NC-SA-4.0",
   "type": "commonjs",

@@ -1,30 +1,27 @@
 /**
- * NJD siren + filter: the PCB.
+ * NJD siren + filter: the MAIN board (all the electronics), lying flat in the 2U chassis.
  *
  * The circuit itself (every resistor, capacitor, op-amp section, pot...) lives in
  * ./circuit/design.ts, the same file the SPICE simulation uses (../spice). This file only
- * decides which real parts implement it and where they go on the board.
+ * decides which real parts implement it and where they go on the board. The panel controls are
+ * on the front board (front.circuit.tsx), reached through the ribbon header J6 on the front edge
+ * (top of the board here); 12 V DC in and OUT are on the rear edge (bottom).
  *
- * 4 layers: top / GND plane / 12 V plane / bottom. 12 V DC in. Front panel = top of the board: SIREN knobs on the first row, FILTER knobs,
- * FIRE / LATCH / POWER on the second. Wire connectors on the bottom edge.
- * Coordinates in mm, origin at the board centre, Y up.
+ * 4 layers: top / GND plane / 12 V plane / bottom. Coordinates in mm, origin at the board centre, Y up.
  */
 import { design, packages, type Part } from "./circuit/design"
+import { RIBBON } from "./circuit/boards"
 
 // JLCPCB parts, imported with `tsci import --jlcpcb --use-exact-footprint <C-number>`
 // (`footprint="jlcpcb:..."` strings do not load in the `tsci dev` view: tscircuit/tscircuit#4048).
-import { RK09K1130A70 } from "./imports/RK09K1130A70" // C351173 9 mm pot, 10k linear
-import { ST_0_102_A01_T000_LF } from "./imports/ST_0_102_A01_T000_LF" // C1788487 mini toggle SPDT
-import { B3F_4055 } from "./imports/B3F_4055" // C84931 12x12 mm tactile
 import { HX25003_2A } from "./imports/HX25003_2A" // C442299 2-pin XH
-import { A_2541WV_07P } from "./imports/A_2541WV_07P" // C25503132 7-pin 2.54 mm wafer (rotary switches)
+import { IDC_2x25 } from "./imports/IDC_2x25" // ribbon to the front board
 import { DC_005_2_5A_2_0 } from "./imports/DC_005_2_5A_2_0" // C319099 5.5/2.1 mm DC jack
 import { TLC2274IDR_UMW_ } from "./imports/TLC2274IDR_UMW_" // C22368276 quad rail-to-rail op-amp
 import { LM13700MX_NOPB } from "./imports/LM13700MX_NOPB" // C174050 dual OTA
 import { TC4S66F_LF } from "./imports/TC4S66F_LF" // C146314 single analog switch
 import { A_1N4148WS } from "./imports/A_1N4148WS" // C7420319
 import { SS14 } from "./imports/SS14" // C2480 reverse-polarity protection
-import { NCD0805R1 } from "./imports/NCD0805R1" // C84256 red LED
 import { RVT100UF35V67RV0034 } from "./imports/RVT100UF35V67RV0034" // C2836442 100 uF 35 V SMD electrolytic
 
 
@@ -33,46 +30,31 @@ type Conn = Record<string, string>
 const conns = (c: Conn) => Object.fromEntries(Object.entries(c).map(([k, v]) => [k, net(v)]))
 
 // ---------------------------------------------------------------- layout
-const W = 170
-const H = 120
-const KNOB_DX = 23
-const COLS = [-3, -2, -1, 0, 1, 2, 3].map((i) => i * KNOB_DX) // 7 columns
-const SIREN_Y = 46 // shaft centres, row 1
-const FILTER_Y = 22 // shaft centres, row 2
-const POT_SHAFT_DY = 3.9 // RK09K: shaft centre is 3.9 mm above the footprint origin
-
-/** where each panel pot goes (shaft position) */
-const KNOBS: Record<string, { x: number; y: number }> = {
-  RV1: { x: COLS[0], y: SIREN_Y }, // TONE
-  RV2: { x: COLS[1], y: SIREN_Y }, // SPEED
-  RV3: { x: COLS[2], y: SIREN_Y }, // DEPTH
-  RV4: { x: COLS[3], y: SIREN_Y }, // SWEEP
-  RV5: { x: COLS[4], y: SIREN_Y }, // GLIDE
-  RV6: { x: COLS[5], y: SIREN_Y }, // RELEASE
-  RV7: { x: COLS[6], y: SIREN_Y }, // VOLUME
-  RV8: { x: COLS[0], y: FILTER_Y }, // DRIVE
-  RV9: { x: COLS[1], y: FILTER_Y }, // CUTOFF
-  RV10: { x: COLS[2], y: FILTER_Y }, // RESONANCE
-  RV11: { x: COLS[3], y: FILTER_Y }, // LFO > CUTOFF
-}
+const W = 176
+const H = 96
+const RIBBON_Y = H / 2 - 6.5 // J6, along the front edge
+const ROW_A = 8 // clusters next to the ribbon
+const ROW_B = -20
 
 /**
  * Small parts are packed in one cluster per chip (the chip + the parts wired to it), so chips
  * never overlap. Cluster centres follow the signal path; "power" holds the 6 V reference parts.
  */
 const CLUSTERS: Record<string, { x: number; y: number }> = {
-  U1: { x: -66, y: -2 }, // 6 V reference + LFO core
-  U9: { x: -50, y: -2 }, // LFO saw switch
-  U2: { x: -34, y: -2 }, // LFO shapes + selector buffer
-  U10: { x: -18, y: -2 }, // random sample & hold
-  U3: { x: -44, y: -30 }, // envelopes + pitch CV
-  U4: { x: 0, y: -2 }, // carrier comparator / shapes
-  U11: { x: 18, y: -2 }, // carrier saw switch
-  U7: { x: 36, y: -2 }, // carrier OTA + VCA
-  U5: { x: 62, y: -2 }, // VCA buffer, drive, cutoff CV
-  U8: { x: -12, y: -30 }, // filter OTAs
-  U6: { x: 14, y: -30 }, // filter buffers
-  OUT: { x: 40, y: -30 }, // volume output
+  // row A follows the ribbon, left to right: pitch CV, LFO, carrier, filter
+  U3: { x: -68, y: ROW_A }, // envelopes + pitch CV
+  U1: { x: -38, y: ROW_A }, // 6 V reference + LFO core
+  U2: { x: -14, y: ROW_A }, // LFO shapes + selector buffer
+  U4: { x: 10, y: ROW_A }, // carrier comparator / shapes
+  U5: { x: 38, y: ROW_A }, // VCA buffer, drive, cutoff CV
+  U6: { x: 66, y: ROW_A }, // filter buffers, gate buffer
+  // row B: the analog switches under their oscillator, VCA, filter OTAs, output
+  U9: { x: -40, y: ROW_B }, // LFO saw switch
+  U10: { x: -24, y: ROW_B }, // random sample & hold
+  U11: { x: -6, y: ROW_B }, // carrier saw switch
+  U7: { x: 14, y: ROW_B }, // carrier OTA + VCA
+  U8: { x: 42, y: ROW_B }, // filter OTAs
+  OUT: { x: 68, y: ROW_B }, // volume output
 }
 
 // ---------------------------------------------------------------- parts
@@ -142,19 +124,39 @@ const RAILS = new Set(["GND", "V12", "VREF"])
 const partNets = (p: Part): string[] =>
   p.t === "R" || p.t === "C" ? [p.a, p.b] : p.t === "D" ? [p.anode, p.cathode] : []
 /** parts whose nets alone do not say where they belong (passive sum nodes) */
-const PLACE: Record<string, string> = { R76: "U2", R78: "U2", R81: "U4" }
-function clusterOf(p: Part): string {
-  if (PLACE[p.ref]) return PLACE[p.ref]
-  const nets = partNets(p).filter((n) => !RAILS.has(n))
-  let best = "OUT", score = 0
-  for (const [chip, pins] of Object.entries(CHIP_PINS)) {
-    const s = nets.filter((n) => pins.has(n)).length
-    if (s > score) { best = chip; score = s }
+const PLACE: Record<string, string> = { R76: "U2", R78: "U2" }
+const BLOCK_CHIP: Record<string, string> = { power: "U1", lfo: "U1", lfo2: "U2", env: "U3", vco: "U3", vca: "U5", filter: "U5", out: "OUT" }
+const CLUSTER_OF: Record<string, string> = {}
+{
+  const small = design.filter((p) => ["R", "C", "D"].includes(p.t))
+  const signalNets = (p: Part) => partNets(p).filter((n) => !RAILS.has(n))
+  // 1. parts wired to a chip pin go with that chip (the one they share the most nets with)
+  for (const p of small) {
+    if (PLACE[p.ref]) { CLUSTER_OF[p.ref] = PLACE[p.ref]; continue }
+    let best = "", score = 0
+    for (const [chip, pins] of Object.entries(CHIP_PINS)) {
+      const s = signalNets(p).filter((n) => pins.has(n)).length
+      if (s > score) { best = chip; score = s }
+    }
+    if (score) CLUSTER_OF[p.ref] = best
   }
-  // parts only touching rails / pots (reference divider, pot end resistors...): keep them by block
-  if (score === 0) best = { power: "U1", lfo: "U1", lfo2: "U2", env: "U3", vco: "U3", vca: "U5", filter: "U5", out: "OUT" }[p.group]
-  return best
+  // 2. the others (diode strings, sum nodes...) follow the parts they share a net with
+  for (let changed = true; changed; ) {
+    changed = false
+    for (const p of small) {
+      if (CLUSTER_OF[p.ref]) continue
+      const votes: Record<string, number> = {}
+      for (const q of small)
+        if (q !== p && CLUSTER_OF[q.ref] && signalNets(q).some((n) => signalNets(p).includes(n)))
+          votes[CLUSTER_OF[q.ref]] = (votes[CLUSTER_OF[q.ref]] ?? 0) + 1
+      const best = Object.entries(votes).sort((a, b) => b[1] - a[1])[0]
+      if (best) { CLUSTER_OF[p.ref] = best[0]; changed = true }
+    }
+  }
+  // 3. parts only touching rails / pots (reference divider, pot end resistors...): keep them by block
+  for (const p of small) CLUSTER_OF[p.ref] ??= BLOCK_CHIP[p.group]
 }
+const clusterOf = (p: Part) => CLUSTER_OF[p.ref]
 
 function Cluster({ chip }: { chip: string }) {
   const parts = design.filter((p) => ["R", "C", "D"].includes(p.t) && clusterOf(p) === chip)
@@ -177,92 +179,38 @@ const Label = (p: { text: string; x: number; y: number; size?: number }) => (
   <silkscreentext text={p.text} pcbX={p.x} pcbY={p.y} fontSize={`${p.size ?? 1.6}mm`} />
 )
 
-function Knob({ p }: { p: Extract<Part, { t: "POT" }> }) {
-  const at = KNOBS[p.ref]
-  // a rheostat leaves the CW end free: tie it to the wiper
-  return (
-    <>
-      <RK09K1130A70
-        name={p.ref}
-        connections={{ pin1: net(p.ccw), pin2: net(p.wiper), pin3: net(p.cw ?? p.wiper), EH1: net("GND"), EH2: net("GND") }}
-        pcbX={at.x}
-        pcbY={at.y - POT_SHAFT_DY}
-      />
-      <Label text={p.label} x={at.x} y={at.y + 8} />
-    </>
-  )
-}
+export default () => (
+  <board width={`${W}mm`} height={`${H}mm`} borderRadius="3mm" title="NJD siren main" layers={4}
+    nominalTraceWidth="0.3mm" minTraceWidth="0.2mm" routeRemaining autorouter={{ traceClearance: "0.15mm" }}>
+    {/* ===== ribbon to the front board (pots, selectors, LATCH, POWER, FIRE) ===== */}
+    <IDC_2x25 name="J6" connections={Object.fromEntries(RIBBON.map((n, i) => [`pin${i + 1}`, net(n)])) as any} pcbX={-1.27} pcbY={RIBBON_Y} />
+    <Label text="FRONT" x={-44} y={RIBBON_Y} size={1.6} />
+    {/* FIRE / LATCH pull GATE to 12 V */}
+    <resistor name="R91" resistance="100k" footprint="0603" connections={{ pin1: net("GATE"), pin2: net("GND") }}
+      pcbX={-W / 2 + 8} pcbY={RIBBON_Y} />
 
-function Selector({ p, x, y }: { p: Extract<Part, { t: "SEL" }>; x: number; y: number }) {
-  const c: Conn = { pin1: p.com }
-  p.throws.forEach((t, i) => (c[`pin${i + 2}`] = t))
-  const unused = [...Array(7 - 1 - p.throws.length)].map((_, i) => `pin${p.throws.length + 2 + i}`)
-  return (
-    <>
-      <A_2541WV_07P name={p.ref} connections={conns(c) as any} noConnect={unused as any} pcbX={x} pcbY={y} />
-      <Label text={`${p.label}: C ${p.names.join(" ")}`} x={x} y={y + 5} size={1.1} />
-    </>
-  )
-}
+    {/* ===== small parts, clustered around their chip ===== */}
+    {Object.keys(CLUSTERS).map((chip) => <Cluster key={chip} chip={chip} />)}
 
-export default () => {
-  const pots = design.filter((p): p is Extract<Part, { t: "POT" }> => p.t === "POT")
-  const sel = (ref: string) => design.find((p) => p.ref === ref) as Extract<Part, { t: "SEL" }>
-  return (
-    <board width={`${W}mm`} height={`${H}mm`} borderRadius="3mm" title="NJD siren + filter" layers={4}
-      nominalTraceWidth="0.3mm" minTraceWidth="0.2mm" routeRemaining>
-      <Label text="SIREN" x={-W / 2 + 10} y={SIREN_Y + 12} size={2} />
-      <Label text="FILTER" x={-W / 2 + 10} y={FILTER_Y + 12} size={2} />
+    {/* ===== rear edge: 12 V DC jack (pin1 = centre +), reverse-polarity diode (after the POWER switch), OUT ===== */}
+    <DC_005_2_5A_2_0 name="J1" connections={{ pin1: net("VIN"), pin2: net("GND"), pin3: net("GND") }}
+      pcbX={-W / 2 + 15} pcbY={-H / 2 + 11} pcbRotation={90} />
+    <Label text="12V DC" x={-W / 2 + 15} y={-H / 2 + 21} size={1.2} />
+    <SS14 name="D1" connections={{ anode: net("VSW"), cathode: net("V12") }} pcbX={-W / 2 + 26} pcbY={-H / 2 + 6} />
+    <capacitor name="C90" capacitance="22uF" footprint="0805" connections={{ pin1: net("V12"), pin2: net("GND") }}
+      pcbX={-W / 2 + 33} pcbY={-H / 2 + 6} />
+    <capacitor name="C91" capacitance="22uF" footprint="0805" connections={{ pin1: net("V12"), pin2: net("GND") }}
+      pcbX={-W / 2 + 37} pcbY={-H / 2 + 6} />
+    <HX25003_2A name="J3" connections={{ pin1: net("OUT"), pin2: net("GND") }} pcbX={W / 2 - 16} pcbY={-H / 2 + 6} />
+    <Label text="OUT (tip, gnd)" x={W / 2 - 16} y={-H / 2 + 12} size={1.2} />
 
-      {pots.map((p) => <Knob key={p.ref} p={p} />)}
-
-      {/* FIRE / LATCH / POWER on the filter row, right side */}
-      <B3F_4055 name="SW1" connections={{ pin1: net("V12"), pin4: net("GATE") }} noConnect={["pin2", "pin3"]}
-        pcbX={COLS[4]} pcbY={FILTER_Y} />
-      <Label text="FIRE" x={COLS[4]} y={FILTER_Y + 9} />
-      <ST_0_102_A01_T000_LF name="SW2" connections={{ pin2: net("V12"), pin1: net("GATE") }} noConnect={["pin3"]}
-        pcbX={COLS[5]} pcbY={FILTER_Y} />
-      <Label text="LATCH" x={COLS[5]} y={FILTER_Y + 8} />
-      <ST_0_102_A01_T000_LF name="SW3" connections={{ pin2: net("VIN"), pin1: net("VSW") }} noConnect={["pin3"]}
-        pcbX={COLS[6]} pcbY={FILTER_Y} />
-      <Label text="POWER" x={COLS[6]} y={FILTER_Y + 8} />
-      {/* JLCPCB LED/diode footprints: pin 1 = cathode */}
-      <NCD0805R1 name="D2" connections={{ anode: net("LED_A"), cathode: net("GND") }} pcbX={COLS[6] + 9} pcbY={FILTER_Y + 2} />
-      <resistor name="R90" resistance="4.7k" footprint="0603" connections={{ pin1: net("V12"), pin2: net("LED_A") }}
-        pcbX={COLS[6] + 9} pcbY={FILTER_Y - 2} />
-      {/* FIRE / LATCH / EXT FIRE pull GATE to 12 V */}
-      <resistor name="R91" resistance="100k" footprint="0603" connections={{ pin1: net("GATE"), pin2: net("GND") }}
-        pcbX={COLS[4] + 9} pcbY={FILTER_Y - 6} />
-
-      {/* ===== power in: 12 V DC jack (pin1 = centre +), POWER toggle, reverse-polarity diode ===== */}
-      <DC_005_2_5A_2_0 name="J1" connections={{ pin1: net("VIN"), pin2: net("GND"), pin3: net("GND") }}
-        pcbX={-W / 2 + 15} pcbY={-H / 2 + 11} pcbRotation={90} />
-      <Label text="12V DC" x={-W / 2 + 15} y={-H / 2 + 21} size={1.2} />
-      <SS14 name="D1" connections={{ anode: net("VSW"), cathode: net("V12") }} pcbX={-W / 2 + 24} pcbY={-H / 2 + 8} />
-      <capacitor name="C90" capacitance="22uF" footprint="0805" connections={{ pin1: net("V12"), pin2: net("GND") }}
-        pcbX={-W / 2 + 31} pcbY={-H / 2 + 8} />
-      <capacitor name="C91" capacitance="22uF" footprint="0805" connections={{ pin1: net("V12"), pin2: net("GND") }}
-        pcbX={-W / 2 + 35} pcbY={-H / 2 + 8} />
-
-      {/* ===== small parts, clustered around their chip ===== */}
-      {Object.keys(CLUSTERS).map((chip) => <Cluster key={chip} chip={chip} />)}
-
-      {/* ===== wire connectors on the bottom edge ===== */}
-      <Selector p={sel("J4")} x={-20} y={-H / 2 + 7} />
-      <Selector p={sel("J5")} x={8} y={-H / 2 + 7} />
-      <HX25003_2A name="J2" connections={{ pin1: net("V12"), pin2: net("GATE") }} pcbX={36} pcbY={-H / 2 + 7} />
-      <Label text="EXT FIRE" x={36} y={-H / 2 + 13} size={1.2} />
-      <HX25003_2A name="J3" connections={{ pin1: net("OUT"), pin2: net("GND") }} pcbX={60} pcbY={-H / 2 + 7} />
-      <Label text="OUT (tip, gnd)" x={60} y={-H / 2 + 13} size={1.2} />
-
-      {/* 4 layers: signals top/bottom, solid GND plane on inner1, 12 V plane on inner2 */}
-      <copperpour connectsTo="net.GND" layer="inner1" clearance="0.3mm" unbroken />
-      <copperpour connectsTo="net.V12" layer="inner2" clearance="0.3mm" unbroken />
-      <copperpour connectsTo="net.GND" layer="bottom" clearance="0.3mm" />
-      <hole name="H1" diameter="3.2mm" pcbX={-W / 2 + 4} pcbY={H / 2 - 4} />
-      <hole name="H2" diameter="3.2mm" pcbX={W / 2 - 4} pcbY={H / 2 - 4} />
-      <hole name="H3" diameter="3.2mm" pcbX={-W / 2 + 4} pcbY={-H / 2 + 4} />
-      <hole name="H4" diameter="3.2mm" pcbX={W / 2 - 4} pcbY={-H / 2 + 4} />
-    </board>
-  )
-}
+    {/* 4 layers: signals top/bottom, solid GND plane on inner1, 12 V plane on inner2 */}
+    <copperpour connectsTo="net.GND" layer="inner1" clearance="0.3mm" unbroken />
+    <copperpour connectsTo="net.V12" layer="inner2" clearance="0.3mm" unbroken />
+    <copperpour connectsTo="net.GND" layer="bottom" clearance="0.3mm" />
+    <hole name="H1" diameter="3.2mm" pcbX={-W / 2 + 4} pcbY={H / 2 - 4} />
+    <hole name="H2" diameter="3.2mm" pcbX={W / 2 - 4} pcbY={H / 2 - 4} />
+    <hole name="H3" diameter="3.2mm" pcbX={-W / 2 + 4} pcbY={-H / 2 + 4} />
+    <hole name="H4" diameter="3.2mm" pcbX={W / 2 - 4} pcbY={-H / 2 + 4} />
+  </board>
+)
