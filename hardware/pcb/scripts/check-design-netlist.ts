@@ -35,7 +35,7 @@ const extra: [string, string][] = [
   ["LED_A", "D2.pin2"], ["GND", "D2.pin1"], ["V12", "R90.pin1"], ["LED_A", "R90.pin2"], ["GATE", "R91.pin1"], ["GND", "R91.pin2"],
   ["VIN", "J1.pin1"], ["GND", "J1.pin2"], ["GND", "J1.pin3"], ["VSW", "D1.pin2"], ["V12", "D1.pin1"],
   ["V12", "C90.pin1"], ["GND", "C90.pin2"], ["V12", "C91.pin1"], ["GND", "C91.pin2"],
-  ["V12", "J2.pin1"], ["GATE", "J2.pin2"], ["OUT", "J3.pin1"], ["GND", "J3.pin2"],
+  ["OUT", "J3.pin1"], ["GND", "J3.pin2"],
 ]
 for (const [n, pin] of extra) add(n, pin)
 
