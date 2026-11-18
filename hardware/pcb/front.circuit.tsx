@@ -2,13 +2,13 @@
  * NJD siren: the FRONT board, right behind the 2U facade.
  *
  * Pots, wave selectors, LATCH, POWER and the power LED sit on the top side (facing the panel),
- * at the positions of ../panel/panel.ts. The FIRE button is panel-mounted (too deep for the board):
+ * at the positions of ./circuit/panel.ts. The FIRE button is panel-mounted (too deep for the board):
  * it is wired to J8. The ribbon header J7 is on the back side and goes to J6 on the main board.
  * 2 layers. Coordinates: the board centre is at (CX, CY) in panel coordinates (x right, y down).
  */
 import { design, type Part } from "./circuit/design"
 import { isFront, RIBBON, SELECTOR_COMMON_PIN, selectorThrowPin } from "./circuit/boards"
-import { CONTROLS } from "../panel/panel"
+import { CONTROLS } from "./circuit/panel"
 
 import { RK09K1130A70 } from "./imports/RK09K1130A70" // C351173 9 mm pot, 10k linear
 import { SRRM1C6200 } from "./imports/SRRM1C6200" // C278333 1 pole 12 positions rotary

@@ -2,7 +2,7 @@
  * NJD siren: how the circuit splits across the two boards.
  *
  * - front board (front.circuit.tsx): everything on the facade (pots, wave selectors, LATCH,
- *   POWER, power LED) plus a header for the panel-mount FIRE button. Placed from ../../panel/panel.ts.
+ *   POWER, power LED) plus a header for the panel-mount FIRE button. Placed from ./panel.ts.
  * - main board (index.circuit.tsx): all the electronics, power input and output on the rear edge.
  *
  * The two are joined by a 50-way IDC ribbon (2x25, 2.54 mm, straight through: pin n to pin n).

@@ -1,14 +1,15 @@
 /**
  * NJD siren: the 2U rack facade, described once.
  *
- * - ./facade.ts draws it (facade.svg).
+ * - ../../panel/facade.ts draws it (facade.svg).
  * - The front PCB (pots, selectors, FIRE, LATCH, POWER) places its parts from the same positions,
  *   so every shaft lines up with its hole.
  *
  * Panel coordinates in mm: origin at the top-left corner of the panel, x to the right, y down.
- * Knob and selector labels come from ../pcb/circuit/design.ts.
+ * Knob and selector labels come from ./design.ts. Lives here (not in ../../panel) so the
+ * tsci dev view, which only loads files inside hardware/pcb, can import it.
  */
-import { design, type Part } from "../pcb/circuit/design"
+import { design, type Part } from "./design"
 
 /** EIA-310 19" panel, 2U */
 export const RACK = {

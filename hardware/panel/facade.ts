@@ -1,12 +1,12 @@
 /**
- * Draw the 2U facade from ./panel.ts.
+ * Draw the 2U facade from ../pcb/circuit/panel.ts.
  *
  *   bun facade.ts   -> facade.svg (real size, mm)
  *
  * SVG groups: #panel (plate), #print (silkscreen / engraving, white), #cut (outline, holes and
  * mounting slots, red hairline) so each can be exported on its own for the panel maker.
  */
-import { BRAND, CONTROLS, HOLE, RACK, SECTIONS, type Control } from "./panel"
+import { BRAND, CONTROLS, HOLE, RACK, SECTIONS, type Control } from "../pcb/circuit/panel"
 
 const W = RACK.width, H = RACK.height
 const f = (n: number) => +n.toFixed(3)

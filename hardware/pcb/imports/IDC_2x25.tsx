@@ -18,7 +18,7 @@ export const IDC_2x25 = (props: ChipProps<any>) => (
     pinLabels={pinLabels as any}
     manufacturerPartNumber="2x25 box header 2.54mm"
     footprint={
-      <footprint>
+      <footprint insertionDirection="from_above">
         {[...Array(N)].map((_, i) => {
           const { x, y } = pos(i + 1)
           return <platedhole {...({ key: i } as {})} portHints={[`pin${i + 1}`]} pcbX={`${x}mm`} pcbY={`${y}mm`} outerDiameter="1.6mm" holeDiameter="1.0mm" shape="circle" />

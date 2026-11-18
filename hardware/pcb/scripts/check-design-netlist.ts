@@ -58,7 +58,7 @@ for (const line of text.split("\n")) {
   if (e && cur) {
     // pins are printed as pinN, or by label (anode, cathode, VDD_GND, EH1...); normalise to pinN via the "(...)" hint where needed
     let pin = e[2]
-    const named: Record<string, string> = { anode: "pin1", cathode: "pin2", EH1: "pin4", EH2: "pin5", VSS: "pin3", CONT: "pin4", VDD: "pin5", IN1: "pin2", OUT1: "pin2", IN2: "pin1", OUT2: "pin1" }
+    const named: Record<string, string> = { anode: "pin1", cathode: "pin2", EH1: "pin4", EH2: "pin5", T: "pin1", S: "pin2", VSS: "pin3", CONT: "pin4", VDD: "pin5", IN1: "pin2", OUT1: "pin2", IN2: "pin1", OUT2: "pin1" }
     if (!/^pin\d+$/.test(pin)) pin = named[pin] ?? pin
     got.get(cur)!.add(`${e[1]}.${pin}`)
   }

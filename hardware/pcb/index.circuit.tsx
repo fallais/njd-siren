@@ -14,7 +14,7 @@ import { RIBBON } from "./circuit/boards"
 
 // JLCPCB parts, imported with `tsci import --jlcpcb --use-exact-footprint <C-number>`
 // (`footprint="jlcpcb:..."` strings do not load in the `tsci dev` view: tscircuit/tscircuit#4048).
-import { HX25003_2A } from "./imports/HX25003_2A" // C442299 2-pin XH
+import { NRJ4HF } from "./imports/NRJ4HF" // Neutrik 6.35 mm mono jack, panel nut (OUT)
 import { IDC_2x25 } from "./imports/IDC_2x25" // ribbon to the front board
 import { DC_005_2_5A_2_0 } from "./imports/DC_005_2_5A_2_0" // C319099 5.5/2.1 mm DC jack
 import { TLC2274IDR_UMW_ } from "./imports/TLC2274IDR_UMW_" // C22368276 quad rail-to-rail op-amp
@@ -31,10 +31,11 @@ const conns = (c: Conn) => Object.fromEntries(Object.entries(c).map(([k, v]) => 
 
 // ---------------------------------------------------------------- layout
 const W = 176
-const H = 96
+const H = 104
 const RIBBON_Y = H / 2 - 6.5 // J6, along the front edge
 const ROW_A = 8 // clusters next to the ribbon
 const ROW_B = -20
+const OUT_X = W / 2 - 18 // OUT jack axis, rear edge
 
 /**
  * Small parts are packed in one cluster per chip (the chip + the parts wired to it), so chips
@@ -54,7 +55,7 @@ const CLUSTERS: Record<string, { x: number; y: number }> = {
   U11: { x: -6, y: ROW_B }, // carrier saw switch
   U7: { x: 14, y: ROW_B }, // carrier OTA + VCA
   U8: { x: 42, y: ROW_B }, // filter OTAs
-  OUT: { x: 68, y: ROW_B }, // volume output
+  OUT: { x: 62, y: ROW_B + 4 }, // volume output, next to the OUT jack
 }
 
 // ---------------------------------------------------------------- parts
@@ -181,7 +182,7 @@ const Label = (p: { text: string; x: number; y: number; size?: number }) => (
 
 export default () => (
   <board width={`${W}mm`} height={`${H}mm`} borderRadius="3mm" title="NJD siren main" layers={4}
-    nominalTraceWidth="0.3mm" minTraceWidth="0.2mm" routeRemaining autorouter={{ traceClearance: "0.15mm" }}>
+    nominalTraceWidth="0.3mm" minTraceWidth="0.2mm" routeRemaining autorouter={{ traceClearance: "0.15mm" }} autorouterEffortLevel="2x">
     {/* ===== ribbon to the front board (pots, selectors, LATCH, POWER, FIRE) ===== */}
     <IDC_2x25 name="J6" connections={Object.fromEntries(RIBBON.map((n, i) => [`pin${i + 1}`, net(n)])) as any} pcbX={-1.27} pcbY={RIBBON_Y} />
     <Label text="FRONT" x={-44} y={RIBBON_Y} size={1.6} />
@@ -201,8 +202,10 @@ export default () => (
       pcbX={-W / 2 + 33} pcbY={-H / 2 + 6} />
     <capacitor name="C91" capacitance="22uF" footprint="0805" connections={{ pin1: net("V12"), pin2: net("GND") }}
       pcbX={-W / 2 + 37} pcbY={-H / 2 + 6} />
-    <HX25003_2A name="J3" connections={{ pin1: net("OUT"), pin2: net("GND") }} pcbX={W / 2 - 16} pcbY={-H / 2 + 6} />
-    <Label text="OUT (tip, gnd)" x={W / 2 - 16} y={-H / 2 + 12} size={1.2} />
+    {/* OUT: 6.35 mm mono jack, nose through the rear panel (body face on the board edge) */}
+    <NRJ4HF name="J3" connections={{ T: net("OUT"), S: net("GND") }} noConnect={["TN", "SN"]}
+      pcbX={OUT_X} pcbY={-H / 2 + 0.2} pcbRotation={-90} />
+    <Label text="OUT" x={OUT_X} y={-H / 2 + 27} size={1.4} />
 
     {/* 4 layers: signals top/bottom, solid GND plane on inner1, 12 V plane on inner2 */}
     <copperpour connectsTo="net.GND" layer="inner1" clearance="0.3mm" unbroken />
